@@ -11,15 +11,12 @@
             padding: 0;
             box-sizing: border-box;
         }
-
         body {
             font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: #f5f7fb;
             height: 100vh;
             overflow: hidden;
         }
-
-        /* 登录/注册页面 */
         .auth-page {
             height: 100vh;
             display: flex;
@@ -27,7 +24,6 @@
             align-items: center;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
-
         .auth-card {
             background: white;
             border-radius: 32px;
@@ -36,7 +32,6 @@
             max-width: 400px;
             box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
         }
-
         .auth-card h2 {
             text-align: center;
             margin-bottom: 28px;
@@ -47,7 +42,6 @@
             -webkit-background-clip: text;
             color: transparent;
         }
-
         .auth-card input {
             width: 100%;
             padding: 14px 18px;
@@ -56,7 +50,6 @@
             border-radius: 60px;
             font-size: 16px;
         }
-
         .auth-card button {
             width: 100%;
             padding: 14px;
@@ -68,7 +61,6 @@
             font-weight: 600;
             cursor: pointer;
         }
-
         .auth-switch {
             text-align: center;
             margin-top: 20px;
@@ -76,21 +68,17 @@
             cursor: pointer;
             font-size: 14px;
         }
-
         .error-msg {
             color: #e53e3e;
             font-size: 13px;
             text-align: center;
             margin-bottom: 16px;
         }
-
-        /* 主应用布局 */
         .app-container {
             display: flex;
             flex-direction: column;
             height: 100vh;
         }
-
         .top-nav {
             background: white;
             border-bottom: 1px solid #eef2f6;
@@ -101,7 +89,6 @@
             overflow-x: auto;
             flex-shrink: 0;
         }
-
         .nav-item {
             padding: 16px 20px;
             font-size: 16px;
@@ -111,19 +98,16 @@
             border-bottom: 2px solid transparent;
             white-space: nowrap;
         }
-
         .nav-item.active {
             color: #007aff;
             border-bottom-color: #007aff;
         }
-
         .user-info {
             margin-left: auto;
             display: flex;
             align-items: center;
             gap: 16px;
         }
-
         .logout-btn {
             background: #ef4444;
             border: none;
@@ -132,14 +116,11 @@
             color: white;
             cursor: pointer;
         }
-
         .main-content {
             flex: 1;
             overflow-y: auto;
             padding: 24px 28px;
         }
-
-        /* 卡片样式 */
         .card {
             background: white;
             border-radius: 24px;
@@ -147,7 +128,6 @@
             margin-bottom: 24px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.02);
         }
-
         .friend-item, .contact-item {
             display: flex;
             align-items: center;
@@ -156,7 +136,6 @@
             border-bottom: 1px solid #f0f0f0;
             cursor: pointer;
         }
-
         .avatar {
             width: 48px;
             height: 48px;
@@ -164,15 +143,8 @@
             object-fit: cover;
             background: #e9ecef;
         }
-
-        .info {
-            flex: 1;
-        }
-
-        .name {
-            font-weight: 600;
-        }
-
+        .info { flex: 1; }
+        .name { font-weight: 600; }
         button {
             background: #007aff;
             border: none;
@@ -182,7 +154,6 @@
             font-weight: 500;
             cursor: pointer;
         }
-
         .messages-area {
             max-height: 55vh;
             overflow-y: auto;
@@ -191,38 +162,32 @@
             gap: 12px;
             margin-bottom: 16px;
         }
-
         .message {
             max-width: 80%;
             padding: 10px 14px;
             border-radius: 20px;
         }
-
         .message.sent {
             align-self: flex-end;
             background: #007aff;
             color: white;
         }
-
         .message.received {
             align-self: flex-start;
             background: #e9ecef;
         }
-
         .profile-header {
             display: flex;
             gap: 24px;
             align-items: center;
             flex-wrap: wrap;
         }
-
         .profile-avatar-lg {
             width: 100px;
             height: 100px;
             border-radius: 50%;
             object-fit: cover;
         }
-
         .home-announcement {
             background: linear-gradient(135deg, #fff7e5 0%, #ffe8c7 100%);
             border-radius: 32px;
@@ -231,18 +196,15 @@
             text-align: center;
             box-shadow: 0 8px 20px rgba(0,0,0,0.05);
         }
-
         .home-announcement .icon {
             font-size: 48px;
             margin-bottom: 16px;
         }
-
         .home-announcement .text {
             font-size: 1.3rem;
             line-height: 1.5;
             font-weight: 500;
         }
-
         table {
             width: 100%;
             border-collapse: collapse;
@@ -287,19 +249,48 @@
         return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
     }
 
-    // 确保用户 profile 存在
+    // 确保用户 profile 存在（使用 upsert 避免冲突）
     async function ensureProfile(user, username) {
-        const { data } = await _supabase.from('public_profiles').select('id').eq('id', user.id).maybeSingle();
-        if (!data) {
-            await _supabase.from('public_profiles').insert({
+        const { error } = await _supabase
+            .from('public_profiles')
+            .upsert({
                 id: user.id,
                 email: user.email,
                 display_name: username,
                 is_admin: false,
                 is_muted: false,
-                bio: ''
-            });
+                bio: '',
+                deleted_at: null
+            }, { onConflict: 'id' });
+        if (error) {
+            console.error('确保 profile 失败:', error);
+            throw error;
         }
+    }
+
+    // 获取当前用户的 profile（带重试）
+    async function fetchCurrentProfile() {
+        if (!currentUser) return null;
+        let retries = 0;
+        while (retries < 3) {
+            const { data, error } = await _supabase
+                .from('public_profiles')
+                .select('*')
+                .eq('id', currentUser.id)
+                .maybeSingle();
+            if (error) {
+                console.error('获取 profile 出错:', error);
+                retries++;
+                await new Promise(r => setTimeout(r, 500));
+                continue;
+            }
+            if (data) return data;
+            // 如果没找到，可能是触发器还没执行，手动插入一次
+            const username = currentUser.email?.replace(EMAIL_SUFFIX, '') || 'user';
+            await ensureProfile(currentUser, username);
+            retries++;
+        }
+        throw new Error('无法获取或创建用户资料');
     }
 
     // ==================== 认证页面 ====================
@@ -334,31 +325,51 @@
             }
             if (authIsLogin) {
                 // 登录
-                const { data: profile } = await _supabase.from('public_profiles').select('email').eq('display_name', username).maybeSingle();
-                if (!profile) { errorDiv.innerText = '用户名不存在'; return; }
+                const { data: profile, error: findErr } = await _supabase
+                    .from('public_profiles')
+                    .select('email')
+                    .eq('display_name', username)
+                    .maybeSingle();
+                if (findErr || !profile) {
+                    errorDiv.innerText = '用户名不存在';
+                    return;
+                }
                 const { error } = await _supabase.auth.signInWithPassword({ email: profile.email, password });
-                if (error) { errorDiv.innerText = error.message; return; }
+                if (error) {
+                    errorDiv.innerText = error.message;
+                    return;
+                }
                 const { data: { user } } = await _supabase.auth.getUser();
                 currentUser = user;
-                await ensureProfile(currentUser, username);
-                renderApp();
+                try {
+                    await ensureProfile(currentUser, username);
+                    currentProfile = await fetchCurrentProfile();
+                    renderApp();
+                } catch (err) {
+                    errorDiv.innerText = '登录失败，请重试';
+                    console.error(err);
+                }
             } else {
                 // 注册
-                const { data: existing } = await _supabase.from('public_profiles').select('id').eq('display_name', username).maybeSingle();
-                if (existing) { errorDiv.innerText = '用户名已被占用'; return; }
+                const { data: existing } = await _supabase
+                    .from('public_profiles')
+                    .select('id')
+                    .eq('display_name', username)
+                    .maybeSingle();
+                if (existing) {
+                    errorDiv.innerText = '用户名已被占用';
+                    return;
+                }
                 const randomEmail = crypto.randomUUID() + EMAIL_SUFFIX;
                 const { data, error } = await _supabase.auth.signUp({ email: randomEmail, password });
-                if (error) { errorDiv.innerText = error.message; return; }
+                if (error) {
+                    errorDiv.innerText = error.message;
+                    return;
+                }
                 if (data.user) {
                     currentUser = data.user;
-                    await _supabase.from('public_profiles').insert({
-                        id: currentUser.id,
-                        email: randomEmail,
-                        display_name: username,
-                        is_admin: false,
-                        is_muted: false,
-                        bio: ''
-                    });
+                    await ensureProfile(currentUser, username);
+                    currentProfile = await fetchCurrentProfile();
                     renderApp();
                 } else {
                     errorDiv.innerText = '注册失败';
@@ -376,8 +387,15 @@
 
     // ==================== 主应用渲染 ====================
     async function renderApp() {
-        const { data: profile } = await _supabase.from('public_profiles').select('*').eq('id', currentUser.id).single();
-        currentProfile = profile;
+        if (!currentProfile) {
+            try {
+                currentProfile = await fetchCurrentProfile();
+            } catch (err) {
+                console.error('无法加载用户资料:', err);
+                document.getElementById('root').innerHTML = '<div style="text-align:center;padding:40px;">加载失败，请刷新页面或重新登录</div>';
+                return;
+            }
+        }
 
         let mainHtml = '';
         if (currentView === 'home') mainHtml = await renderHome();
@@ -426,6 +444,7 @@
         document.getElementById('logout-btn').onclick = async () => {
             await _supabase.auth.signOut();
             currentUser = null;
+            currentProfile = null;
             if (messagesSub) messagesSub.unsubscribe();
             renderRoot();
         };
@@ -457,7 +476,6 @@
 
     // ==================== 聊天 ====================
     async function renderChat() {
-        // 获取好友列表
         const { data: friendships } = await _supabase
             .from('friendships')
             .select('user_id, friend_id')
@@ -565,7 +583,6 @@
 
     // ==================== 好友 ====================
     async function renderFriends() {
-        // 待处理请求
         const { data: requests } = await _supabase.from('friendships').select('id, user_id').eq('friend_id', currentUser.id).eq('status', 'pending');
         let requestUsers = [];
         if (requests?.length) {
@@ -579,7 +596,6 @@
                 <button class="reject-friend" style="background:#aaa;">拒绝</button>
             </div>
         `).join('');
-        // 已有好友
         const { data: friendships } = await _supabase.from('friendships').select('user_id, friend_id').or(`user_id.eq.${currentUser.id},friend_id.eq.${currentUser.id}`).eq('status', 'accepted');
         let fids = [];
         friendships?.forEach(f => {
@@ -670,6 +686,7 @@
             const newName = document.getElementById('new-name').value.trim();
             if (!newName) return;
             await _supabase.from('public_profiles').update({ display_name: newName }).eq('id', currentUser.id);
+            currentProfile.display_name = newName;
             alert('昵称已更新');
             renderApp();
         });
@@ -684,6 +701,7 @@
         document.getElementById('update-bio')?.addEventListener('click', async () => {
             const bio = document.getElementById('bio-text').value;
             await _supabase.from('public_profiles').update({ bio }).eq('id', currentUser.id);
+            currentProfile.bio = bio;
             alert('简介已更新');
             renderApp();
         });
@@ -696,6 +714,7 @@
             if (upErr) { alert(upErr.message); return; }
             const { data: { publicUrl } } = _supabase.storage.from('avatars').getPublicUrl(path);
             await _supabase.from('public_profiles').update({ avatar_url: publicUrl }).eq('id', currentUser.id);
+            currentProfile.avatar_url = publicUrl;
             alert('头像已更新');
             renderApp();
         });
@@ -704,6 +723,7 @@
             await _supabase.from('public_profiles').update({ deleted_at: new Date().toISOString() }).eq('id', currentUser.id);
             await _supabase.auth.signOut();
             currentUser = null;
+            currentProfile = null;
             renderRoot();
         });
     }
@@ -723,13 +743,12 @@
                     <td>${u.is_muted ? '已禁言' : `<button class="toggle-mute" data-id="${u.id}">禁言</button>`}</td>
                     <td><button class="admin-del" data-id="${u.id}">删除</button></td>
                 </tr>
-            `).join('')}}</table></div>
+            `).join('')}</table></div>
             <div class="card"><h3>创建新用户</h3><input id="new-admin-name" placeholder="用户名"><input id="new-admin-pwd" placeholder="密码"><button id="admin-create-user">创建</button></div>
         `;
     }
 
     function attachAdminEvents() {
-        // 保存公告
         document.getElementById('save-announcement')?.addEventListener('click', async () => {
             const content = document.getElementById('admin-announcement').value;
             if (!content) return;
@@ -738,7 +757,6 @@
             alert('公告已更新');
             renderApp();
         });
-        // 设为管理员
         document.querySelectorAll('.set-admin').forEach(btn => {
             btn.onclick = async () => {
                 const userId = btn.dataset.id;
@@ -747,7 +765,6 @@
                 else { alert('已设为管理员'); renderApp(); }
             };
         });
-        // 禁言/解除禁言
         document.querySelectorAll('.toggle-mute').forEach(btn => {
             btn.onclick = async () => {
                 const userId = btn.dataset.id;
@@ -758,7 +775,6 @@
                 else { alert(newMuted ? '已禁言' : '已解除禁言'); renderApp(); }
             };
         });
-        // 删除用户
         document.querySelectorAll('.admin-del').forEach(btn => {
             btn.onclick = async () => {
                 if (!confirm('确定删除该用户？')) return;
@@ -768,7 +784,6 @@
                 else { alert('用户已删除'); renderApp(); }
             };
         });
-        // 创建用户
         document.getElementById('admin-create-user')?.addEventListener('click', async () => {
             const username = document.getElementById('new-admin-name').value.trim();
             const pwd = document.getElementById('new-admin-pwd').value;
@@ -796,9 +811,13 @@
         const { data: { session } } = await _supabase.auth.getSession();
         if (session?.user) {
             currentUser = session.user;
-            const { data: profile } = await _supabase.from('public_profiles').select('display_name').eq('id', currentUser.id).maybeSingle();
-            await ensureProfile(currentUser, profile?.display_name || 'user');
-            renderApp();
+            try {
+                currentProfile = await fetchCurrentProfile();
+                renderApp();
+            } catch (err) {
+                console.error(err);
+                document.getElementById('root').innerHTML = '<div style="text-align:center;padding:40px;">加载用户数据失败，请刷新页面或重新登录</div>';
+            }
         } else {
             document.getElementById('root').innerHTML = renderAuth();
             attachAuthEvents();
