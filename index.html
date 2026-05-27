@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>微信风格私聊 - 用户名注册</title>
+    <title>JChat - Jchat</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
@@ -203,28 +203,28 @@
 <div id="app"></div>
 
 <script>
-    // ---------- 🔥 替换成你自己的 Supabase 信息 ----------
+    // ---------- 🔥 请替换成你自己的 Supabase 信息 ----------
     const SUPABASE_URL = 'https://cxilodvbdhtxtrldoswl.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_36lHK24HL6drOmuhSTTv8g_w2n0fU5H';
-    // ---------------------------------------------------
+    // -----------------------------------------------------
 
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    // 固定邮箱后缀，用户只需输入用户名
-    const EMAIL_SUFFIX = '@chat.local';
+    // 唯一初始化客户端
+    const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // 固定邮箱后缀
+    const EMAIL_SUFFIX = '@jchat.local';
 
-    // 辅助函数：用户名转邮箱
     function usernameToEmail(username) {
         return username.trim().toLowerCase() + EMAIL_SUFFIX;
     }
-    // 邮箱转回用户名（用于显示）
     function emailToUsername(email) {
         return email.replace(EMAIL_SUFFIX, '');
     }
 
-    let currentUser = null;       // 当前登录的用户对象
-    let currentChatUser = null;   // 当前正在私聊的用户 (profile)
+    let currentUser = null;
+    let currentChatUser = null;
     let messagesSubscription = null;
 
+    // 渲染入口
     function render() {
         const app = document.getElementById('app');
         if (!currentUser) {
@@ -238,7 +238,7 @@
     function renderAuth() {
         return `
             <div class="auth-container">
-                <h2 id="auth-title">登录</h2>
+                <h2 id="auth-title">登录 JChat</h2>
                 <div id="auth-error" class="error-msg"></div>
                 <input type="text" id="username" placeholder="用户名" autocomplete="username">
                 <input type="password" id="password" placeholder="密码" autocomplete="current-password">
@@ -268,18 +268,17 @@
             }
             const email = usernameToEmail(username);
             if (isLogin) {
-                // 登录
-                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
                 if (error) {
                     errorDiv.innerText = error.message;
                 } else {
                     currentUser = data.user;
-                    await ensureProfile(currentUser);
+                    await ensureProfile(currentUser, username);
                     render();
                 }
             } else {
-                // 注册：先检查用户名是否已被使用（通过查询 profiles 表）
-                const { data: existing, error: checkError } = await supabase
+                // 检查用户名是否已存在
+                const { data: existing, error: checkErr } = await _supabase
                     .from('public_profiles')
                     .select('id')
                     .eq('display_name', username)
@@ -288,13 +287,13 @@
                     errorDiv.innerText = '用户名已被占用';
                     return;
                 }
-                const { data, error } = await supabase.auth.signUp({ email, password });
+                const { data, error } = await _supabase.auth.signUp({ email, password });
                 if (error) {
                     errorDiv.innerText = error.message;
                 } else if (data.user) {
                     currentUser = data.user;
-                    // 手动创建 profile 并设置 display_name 为用户名
-                    await supabase.from('public_profiles').upsert({
+                    // 手动创建 profile，设置 display_name
+                    await _supabase.from('public_profiles').upsert({
                         id: currentUser.id,
                         email: email,
                         display_name: username
@@ -308,40 +307,36 @@
 
         switchBtn.onclick = () => {
             isLogin = !isLogin;
-            title.innerText = isLogin ? '登录' : '注册';
+            title.innerText = isLogin ? '登录 JChat' : '注册 JChat';
             submitBtn.innerText = isLogin ? '登录' : '注册';
             switchBtn.innerText = isLogin ? '没有账号？去注册' : '已有账号？去登录';
             clearError();
         };
     }
 
-    // 确保 profile 存在，且 display_name 正确
-    async function ensureProfile(user) {
-        const username = emailToUsername(user.email);
-        const { data, error } = await supabase
+    async function ensureProfile(user, fallbackUsername) {
+        const { data, error } = await _supabase
             .from('public_profiles')
             .select('*')
             .eq('id', user.id)
             .maybeSingle();
         if (!data && !error) {
-            await supabase.from('public_profiles').insert({
+            await _supabase.from('public_profiles').insert({
                 id: user.id,
                 email: user.email,
-                display_name: username
+                display_name: fallbackUsername || emailToUsername(user.email)
             });
         } else if (data && !data.display_name) {
-            await supabase.from('public_profiles').update({ display_name: username }).eq('id', user.id);
+            await _supabase.from('public_profiles').update({ display_name: fallbackUsername }).eq('id', user.id);
         }
     }
 
     async function renderMainApp() {
-        // 获取所有用户（排除自己）
-        const { data: profiles, error } = await supabase
+        const { data: profiles, error } = await _supabase
             .from('public_profiles')
             .select('*')
             .neq('id', currentUser.id);
         if (error) console.error(error);
-        // 按 display_name 排序
         const contacts = (profiles || []).sort((a,b) => (a.display_name || '').localeCompare(b.display_name || ''));
 
         const chatHtml = currentChatUser ? renderChatArea() : '<div class="loading">选择一个联系人开始聊天</div>';
@@ -350,7 +345,7 @@
             <div class="app-container">
                 <div class="contacts-panel">
                     <div class="contacts-header">
-                        <span>我的好友</span>
+                        <span>JChat · 联系人</span>
                         <button class="logout-btn" id="logout-btn">退出</button>
                     </div>
                     <div class="contacts-list" id="contacts-list">
@@ -372,11 +367,10 @@
         `;
         document.getElementById('app').innerHTML = appHtml;
 
-        // 绑定联系人点击
         document.querySelectorAll('.contact-item').forEach(el => {
             el.addEventListener('click', async () => {
                 const userId = el.dataset.userId;
-                const { data: profile } = await supabase.from('public_profiles').select('*').eq('id', userId).single();
+                const { data: profile } = await _supabase.from('public_profiles').select('*').eq('id', userId).single();
                 if (profile) {
                     currentChatUser = profile;
                     renderMainApp();
@@ -384,11 +378,10 @@
             });
         });
 
-        // 退出登录
         const logoutBtn = document.getElementById('logout-btn');
         if (logoutBtn) {
             logoutBtn.onclick = async () => {
-                await supabase.auth.signOut();
+                await _supabase.auth.signOut();
                 currentUser = null;
                 currentChatUser = null;
                 if (messagesSubscription) messagesSubscription.unsubscribe();
@@ -408,13 +401,13 @@
         const displayName = currentChatUser.display_name || emailToUsername(currentChatUser.email);
         return `
             <div class="chat-header">
-                正在与 ${escapeHtml(displayName)} 聊天
+                与 ${escapeHtml(displayName)} 的私聊
             </div>
             <div class="messages-area" id="messages-area">
                 <div class="loading">加载消息中...</div>
             </div>
             <div class="input-area">
-                <input type="text" id="messageInput" placeholder="输入消息...">
+                <input type="text" id="messageInput" placeholder="输入消息..." autocomplete="off">
                 <button id="sendBtn">发送</button>
             </div>
         `;
@@ -422,7 +415,7 @@
 
     async function loadMessages() {
         if (!currentUser || !currentChatUser) return;
-        const { data, error } = await supabase
+        const { data, error } = await _supabase
             .from('messages')
             .select('*')
             .or(`from_user_id.eq.${currentUser.id},to_user_id.eq.${currentUser.id}`)
@@ -465,7 +458,7 @@
         const content = input.value.trim();
         if (!content) return;
         if (!currentChatUser) return;
-        const { error } = await supabase.from('messages').insert({
+        const { error } = await _supabase.from('messages').insert({
             from_user_id: currentUser.id,
             to_user_id: currentChatUser.id,
             content: content
@@ -492,7 +485,7 @@
     function subscribeToMessages() {
         if (messagesSubscription) messagesSubscription.unsubscribe();
         if (!currentUser || !currentChatUser) return;
-        messagesSubscription = supabase
+        messagesSubscription = _supabase
             .channel('private-messages')
             .on('postgres_changes', {
                 event: 'INSERT',
@@ -519,10 +512,11 @@
     }
 
     async function checkSession() {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await _supabase.auth.getSession();
         if (session?.user) {
             currentUser = session.user;
-            await ensureProfile(currentUser);
+            const username = emailToUsername(currentUser.email);
+            await ensureProfile(currentUser, username);
         }
         render();
     }
