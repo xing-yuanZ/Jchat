@@ -249,8 +249,9 @@
         return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
     }
 
-    // 确保用户 profile 存在（使用 upsert 避免冲突）
+    // 确保用户 profile 存在（使用 upsert 避免冲突，并忽略错误）
     async function ensureProfile(user, username) {
+        // 先尝试插入，如果冲突则忽略（不做任何操作）
         const { error } = await _supabase
             .from('public_profiles')
             .upsert({
@@ -261,36 +262,37 @@
                 is_muted: false,
                 bio: '',
                 deleted_at: null
-            }, { onConflict: 'id' });
-        if (error) {
-            console.error('确保 profile 失败:', error);
-            throw error;
+            }, { onConflict: 'id', ignoreDuplicates: true });  // 关键：ignoreDuplicates 避免 409
+        if (error && error.code !== '23505') { // 23505 是唯一键冲突，忽略
+            console.warn('ensureProfile upsert 警告:', error);
         }
     }
 
-    // 获取当前用户的 profile（带重试）
-    async function fetchCurrentProfile() {
-        if (!currentUser) return null;
-        let retries = 0;
-        while (retries < 3) {
+    // 获取当前用户的 profile（带重试，直到成功或超时）
+    async function fetchCurrentProfile(retries = 5, delay = 500) {
+        if (!currentUser) throw new Error('No current user');
+        for (let i = 0; i < retries; i++) {
             const { data, error } = await _supabase
                 .from('public_profiles')
                 .select('*')
                 .eq('id', currentUser.id)
                 .maybeSingle();
             if (error) {
-                console.error('获取 profile 出错:', error);
-                retries++;
-                await new Promise(r => setTimeout(r, 500));
+                console.warn(`获取 profile 尝试 ${i+1} 失败:`, error);
+                await new Promise(r => setTimeout(r, delay));
                 continue;
             }
-            if (data) return data;
-            // 如果没找到，可能是触发器还没执行，手动插入一次
-            const username = currentUser.email?.replace(EMAIL_SUFFIX, '') || 'user';
-            await ensureProfile(currentUser, username);
-            retries++;
+            if (data) {
+                return data;
+            }
+            // 如果没有数据，尝试手动插入一次（只在第一次尝试时）
+            if (i === 0) {
+                const username = currentUser.email?.replace(EMAIL_SUFFIX, '') || 'user';
+                await ensureProfile(currentUser, username);
+            }
+            await new Promise(r => setTimeout(r, delay));
         }
-        throw new Error('无法获取或创建用户资料');
+        throw new Error('无法获取或创建用户资料，请检查网络或数据库');
     }
 
     // ==================== 认证页面 ====================
@@ -342,11 +344,12 @@
                 const { data: { user } } = await _supabase.auth.getUser();
                 currentUser = user;
                 try {
+                    // 确保 profile 存在（可能会因为触发器延迟而等待）
                     await ensureProfile(currentUser, username);
-                    currentProfile = await fetchCurrentProfile();
+                    currentProfile = await fetchCurrentProfile(8, 600);
                     renderApp();
                 } catch (err) {
-                    errorDiv.innerText = '登录失败，请重试';
+                    errorDiv.innerText = '登录失败: ' + err.message;
                     console.error(err);
                 }
             } else {
@@ -369,8 +372,13 @@
                 if (data.user) {
                     currentUser = data.user;
                     await ensureProfile(currentUser, username);
-                    currentProfile = await fetchCurrentProfile();
-                    renderApp();
+                    try {
+                        currentProfile = await fetchCurrentProfile(8, 600);
+                        renderApp();
+                    } catch (err) {
+                        errorDiv.innerText = '注册成功但加载资料失败，请刷新页面';
+                        console.error(err);
+                    }
                 } else {
                     errorDiv.innerText = '注册失败';
                 }
