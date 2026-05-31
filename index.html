@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>JChat</title>
+    <title>JChat - 即时通讯</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
@@ -11,18 +11,15 @@
             padding: 0;
             box-sizing: border-box;
         }
-
         html, body, #root {
             height: 100%;
             overflow: hidden;
         }
-
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: #f5f7fb;
         }
-
-        /* 登录页共用 */
+        /* 登录页 */
         .auth-page {
             height: 100%;
             display: flex;
@@ -69,8 +66,7 @@
             margin-bottom: 12px;
             text-align: center;
         }
-
-        /* 电脑版布局 (默认) */
+        /* 电脑版布局 */
         .pc-app {
             display: flex;
             flex-direction: column;
@@ -114,23 +110,53 @@
             color: #007aff;
             font-weight: 500;
         }
-        .user-name {
-            margin-left: 12px;
-            font-weight: 500;
+        /* 用户下拉菜单 */
+        .user-dropdown {
+            position: relative;
+            display: inline-block;
         }
-        .logout-pc {
-            background: #ef4444;
-            border: none;
-            padding: 6px 14px;
-            border-radius: 20px;
-            color: white;
+        .user-trigger {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 30px;
+            background: #f0f2f5;
         }
-        .pc-content {
-            flex: 1;
-            overflow: hidden;
+        .user-trigger:hover {
+            background: #e4e6e9;
         }
-
+        .dropdown-menu {
+            position: absolute;
+            right: 0;
+            top: 45px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            min-width: 160px;
+            z-index: 200;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: opacity 0.2s, visibility 0.2s, transform 0.2s;
+        }
+        .dropdown-menu.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        .dropdown-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .dropdown-item:hover {
+            background: #f0f2f5;
+        }
         /* 手机版布局 */
         .mobile-app {
             display: flex;
@@ -160,7 +186,7 @@
         .mobile-content {
             flex: 1;
             overflow-y: auto;
-            padding-bottom: 70px;  /* 为底部导航留空间 */
+            padding-bottom: 70px;
         }
         .bottom-nav {
             position: fixed;
@@ -187,14 +213,12 @@
         }
         .bottom-nav-item.active {
             color: #007aff;
-            font-weight: 500;
             background: rgba(0,122,255,0.08);
         }
         .bottom-icon {
             font-size: 22px;
         }
-
-        /* 共用内容样式（卡片、聊天布局等） */
+        /* 共用内容样式 */
         .main-content-card {
             background: white;
             border-radius: 16px;
@@ -202,6 +226,41 @@
             margin: 16px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
+        /* 主页公告板放大 */
+        .announcement-large {
+            background: linear-gradient(135deg, #fff7e5 0%, #ffe8c7 100%);
+            border-radius: 32px;
+            padding: 32px 40px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .announcement-large .icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        .announcement-large .text {
+            font-size: 1.4rem;
+            font-weight: 500;
+        }
+        /* 通知栏 */
+        .notifications {
+            background: white;
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+        .notification-item {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .notification-item:hover {
+            background: #f9fafb;
+        }
+        /* 聊天布局 */
         .chat-layout {
             display: flex;
             height: 100%;
@@ -233,6 +292,7 @@
             padding: 12px 20px;
             cursor: pointer;
             border-bottom: 1px solid #f0f0f0;
+            position: relative;
         }
         .contact-item:hover {
             background: #eef2ff;
@@ -250,12 +310,35 @@
             justify-content: center;
             color: white;
             font-weight: bold;
+            position: relative;
+        }
+        .unread-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ff3b30;
+            color: white;
+            border-radius: 50%;
+            min-width: 18px;
+            height: 18px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
         }
         .contact-info {
             flex: 1;
         }
         .contact-name {
             font-weight: 500;
+        }
+        .last-message {
+            font-size: 12px;
+            color: #8e8e93;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .chat-area {
             flex: 1;
@@ -320,6 +403,7 @@
             color: white;
             cursor: pointer;
         }
+        /* 其他样式 */
         .friend-item {
             display: flex;
             justify-content: space-between;
@@ -393,14 +477,6 @@
             width: 30px;
             text-align: center;
         }
-        input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-            margin: 0;
-        }
-
-        /* 手机版适配聊天布局 */
         @media (max-width: 768px) {
             .chat-layout {
                 flex-direction: column;
@@ -435,6 +511,7 @@
     let currentChatUser = null;
     let messagesSubscription = null;
     let isMobile = window.innerWidth <= 768;
+    let unreadCounts = new Map(); // 本地缓存未读数
 
     window.addEventListener('resize', () => {
         const newIsMobile = window.innerWidth <= 768;
@@ -450,6 +527,26 @@
     }
     function getInitial(name) {
         return name ? name.charAt(0).toUpperCase() : '?';
+    }
+
+    // 加载当前用户的所有未读计数
+    async function loadUnreadCounts() {
+        const { data, error } = await _supabase
+            .from('unread_messages')
+            .select('from_user_id, count')
+            .eq('user_id', currentUser.id);
+        if (!error && data) {
+            unreadCounts.clear();
+            data.forEach(item => unreadCounts.set(item.from_user_id, item.count));
+        }
+    }
+
+    // 清除与某人的未读计数
+    async function clearUnreadForUser(fromUserId) {
+        const { error } = await _supabase.rpc('clear_unread_count', { p_from_user_id: fromUserId });
+        if (!error) {
+            unreadCounts.set(fromUserId, 0);
+        }
     }
 
     async function ensureProfile(user, username) {
@@ -486,6 +583,29 @@
             await new Promise(r => setTimeout(r, delay));
         }
         throw new Error('无法获取用户资料');
+    }
+
+    // 获取通知列表（未读消息摘要）
+    async function getNotifications() {
+        // 获取所有未读消息记录（包括发送者信息）
+        const { data: unreads } = await _supabase
+            .from('unread_messages')
+            .select('from_user_id, count')
+            .eq('user_id', currentUser.id)
+            .gt('count', 0);
+        if (!unreads || unreads.length === 0) return [];
+        const fromIds = unreads.map(u => u.from_user_id);
+        const { data: profiles } = await _supabase
+            .from('public_profiles')
+            .select('id, display_name')
+            .in('id', fromIds)
+            .is('deleted_at', null);
+        const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+        return unreads.map(u => ({
+            from_user_id: u.from_user_id,
+            display_name: profileMap.get(u.from_user_id)?.display_name || '未知',
+            count: u.count
+        }));
     }
 
     // 认证界面
@@ -538,6 +658,7 @@
                 try {
                     await ensureProfile(currentUser, username);
                     currentProfile = await fetchCurrentProfile();
+                    await loadUnreadCounts();
                     renderApp();
                 } catch (err) {
                     errorDiv.innerText = '登录失败，请刷新重试';
@@ -565,12 +686,9 @@
                     if (data.user) {
                         currentUser = data.user;
                         await ensureProfile(currentUser, username);
-                        try {
-                            currentProfile = await fetchCurrentProfile();
-                            renderApp();
-                        } catch (err) {
-                            errorDiv.innerText = '注册成功但加载失败，请刷新';
-                        }
+                        currentProfile = await fetchCurrentProfile();
+                        await loadUnreadCounts();
+                        renderApp();
                     } else {
                         errorDiv.innerText = '注册失败';
                     }
@@ -591,11 +709,30 @@
         };
     }
 
-    // ---------- 页面渲染函数（手机/电脑共用内容） ----------
+    // 页面渲染函数
     async function renderHome() {
         const { data: ann } = await _supabase.from('announcements').select('content').order('created_at', { ascending: false }).limit(1);
         const announcement = ann?.[0]?.content || '欢迎使用 JChat！';
-        return `<div class="main-content-card"><h3>📢 公告</h3><p>${escapeHtml(announcement)}</p></div>`;
+        const notifications = await getNotifications();
+        const notificationsHtml = notifications.length > 0 ? `
+            <div class="notifications">
+                <h4>🔔 通知</h4>
+                ${notifications.map(n => `
+                    <div class="notification-item" data-from-id="${n.from_user_id}">
+                        <span>📩 ${escapeHtml(n.display_name)} 给你发了 ${n.count} 条新消息</span>
+                    </div>
+                `).join('')}
+            </div>
+        ` : '<div class="notifications">暂无新消息</div>';
+        return `
+            <div class="main-content-card">
+                <div class="announcement-large">
+                    <div class="icon">📢</div>
+                    <div class="text">${escapeHtml(announcement)}</div>
+                </div>
+                ${notificationsHtml}
+            </div>
+        `;
     }
 
     async function renderFriends() {
@@ -666,21 +803,17 @@
             <div class="main-content-card">
                 <h3>用户管理</h3>
                 <div class="batch-bar">
-                    <span style="margin-right:8px;">批量操作：</span>
-                    <button id="batch-set-admin" class="btn-primary">设为管理员</button>
+                    <span>批量操作：</span>
+                    <button id="batch-set-admin">设为管理员</button>
                     <button id="batch-remove-admin">取消管理员</button>
                     <button id="batch-mute">禁言</button>
                     <button id="batch-unmute">解除禁言</button>
-                    <button id="batch-delete" class="btn-danger">删除</button>
-                    <label style="margin-left:auto;">
-                        <input type="checkbox" id="select-all"> 全选
-                    </label>
+                    <button id="batch-delete" class="danger-btn">删除</button>
+                    <label><input type="checkbox" id="select-all"> 全选</label>
                 </div>
                 <div class="table-wrapper">
                     <table>
-                        <thead>
-                            <tr><th class="checkbox-col"></th><th>用户名</th><th>管理员</th><th>禁言</th><th>操作</th></tr>
-                        </thead>
+                        <thead><tr><th class="checkbox-col"></th><th>用户名</th><th>管理员</th><th>禁言</th><th>操作</th></tr></thead>
                         <tbody id="admin-user-table">
                             ${users?.map(u => `
                                 <tr data-user-id="${u.id}">
@@ -705,7 +838,7 @@
         `;
     }
 
-    // 聊天视图 (电脑版和手机版共用)
+    // 聊天视图
     function renderChatView() {
         return `
             <div class="chat-layout">
@@ -720,6 +853,7 @@
         `;
     }
 
+    // 加载好友列表，并按最后消息时间排序 + 显示未读红点
     async function loadContactsAndChat() {
         const { data: friendships } = await _supabase
             .from('friendships')
@@ -731,32 +865,73 @@
             if (f.user_id === currentUser.id) friendIds.push(f.friend_id);
             else friendIds.push(f.user_id);
         });
-        let friends = [];
-        if (friendIds.length) {
-            const { data } = await _supabase
-                .from('public_profiles')
-                .select('id, display_name')
-                .in('id', friendIds)
-                .is('deleted_at', null);
-            friends = data || [];
+        if (friendIds.length === 0) {
+            const contactList = document.getElementById('contact-list');
+            if (contactList) contactList.innerHTML = '<div style="padding:20px;text-align:center;">暂无好友，请去“好友”页面添加</div>';
+            return;
         }
+        // 获取好友资料
+        const { data: friends } = await _supabase
+            .from('public_profiles')
+            .select('id, display_name')
+            .in('id', friendIds)
+            .is('deleted_at', null);
+        if (!friends) return;
+
+        // 获取每条对话的最后一条消息时间
+        const lastMessages = await Promise.all(friends.map(async (f) => {
+            const { data } = await _supabase
+                .from('messages')
+                .select('created_at')
+                .or(`and(from_user_id.eq.${currentUser.id},to_user_id.eq.${f.id}),and(from_user_id.eq.${f.id},to_user_id.eq.${currentUser.id})`)
+                .order('created_at', { ascending: false })
+                .limit(1);
+            return { friendId: f.id, lastTime: data?.[0]?.created_at || null };
+        }));
+        const lastTimeMap = new Map(lastMessages.map(l => [l.friendId, l.lastTime]));
+
+        // 排序：有最后消息的按时间倒序，无消息的按用户名
+        const sortedFriends = [...friends].sort((a, b) => {
+            const timeA = lastTimeMap.get(a.id) || '';
+            const timeB = lastTimeMap.get(b.id) || '';
+            if (timeA && timeB) return new Date(timeB) - new Date(timeA);
+            if (timeA) return -1;
+            if (timeB) return 1;
+            return a.display_name.localeCompare(b.display_name);
+        });
+
         const contactList = document.getElementById('contact-list');
         if (contactList) {
-            contactList.innerHTML = friends.map(f => `
-                <div class="contact-item" data-user-id="${f.id}" data-name="${escapeHtml(f.display_name)}">
-                    <div class="avatar-circle">${getInitial(f.display_name)}</div>
-                    <div class="contact-info">
-                        <div class="contact-name">${escapeHtml(f.display_name)}</div>
+            contactList.innerHTML = sortedFriends.map(f => {
+                const unread = unreadCounts.get(f.id) || 0;
+                const badgeHtml = unread > 0 ? `<span class="unread-badge">${unread > 99 ? '99+' : unread}</span>` : '';
+                return `
+                    <div class="contact-item" data-user-id="${f.id}" data-name="${escapeHtml(f.display_name)}">
+                        <div class="avatar-circle" style="position:relative;">
+                            ${getInitial(f.display_name)}
+                            ${badgeHtml}
+                        </div>
+                        <div class="contact-info">
+                            <div class="contact-name">${escapeHtml(f.display_name)}</div>
+                        </div>
                     </div>
-                </div>
-            `).join('') || '<div style="padding:20px;text-align:center;">暂无好友，请去“好友”页面添加</div>';
+                `;
+            }).join('');
         }
 
+        // 绑定点击事件
         document.querySelectorAll('.contact-item').forEach(el => {
             el.addEventListener('click', async () => {
                 const userId = el.dataset.userId;
                 const name = el.dataset.name;
                 currentChatUser = { id: userId, display_name: name };
+                // 清除未读计数
+                if (unreadCounts.get(userId) > 0) {
+                    await clearUnreadForUser(userId);
+                    await loadUnreadCounts();
+                    // 刷新好友列表以更新红点
+                    await loadContactsAndChat();
+                }
                 await loadMessagesAndRenderChat();
                 document.querySelectorAll('.contact-item').forEach(c => c.classList.remove('active'));
                 el.classList.add('active');
@@ -832,7 +1007,12 @@
         if (messagesSubscription) messagesSubscription.unsubscribe();
         messagesSubscription = _supabase
             .channel('new-msg')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `to_user_id=eq.${currentUser.id}` }, payload => {
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `to_user_id=eq.${currentUser.id}` }, async payload => {
+                // 更新未读计数
+                await loadUnreadCounts();
+                // 刷新好友列表（更新小红点和排序）
+                await loadContactsAndChat();
+                // 如果当前正在和发送者聊天，直接显示消息
                 if (currentChatUser && payload.new.from_user_id === currentChatUser.id) {
                     const container = document.getElementById('messages-container');
                     if (container) {
@@ -847,16 +1027,19 @@
             .subscribe();
     }
 
-    // 电脑版渲染
+    // 电脑版渲染（含用户下拉菜单）
     async function renderPc() {
         const navItems = [
             { id: 'home', label: '主页' },
             { id: 'chat', label: '聊天' },
-            { id: 'friends', label: '好友' },
-            { id: 'profile', label: '我的主页' },
-            { id: 'settings', label: '设置' }
+            { id: 'friends', label: '好友' }
         ];
-        if (currentProfile.is_admin) navItems.push({ id: 'admin', label: '管理' });
+        // 不再在顶部显示“我的主页”、“设置”、“管理”，而是放入下拉菜单
+        const dropdownItems = [
+            { id: 'profile', label: '😀 我的主页' },
+            { id: 'settings', label: '⚙️ 设置' }
+        ];
+        if (currentProfile.is_admin) dropdownItems.push({ id: 'admin', label: '🔧 管理' });
 
         const topBar = `
             <div class="pc-top-bar">
@@ -865,8 +1048,18 @@
                     ${navItems.map(item => `
                         <div class="pc-nav-item ${currentView === item.id ? 'active' : ''}" data-view="${item.id}">${item.label}</div>
                     `).join('')}
-                    <span class="user-name">${escapeHtml(currentProfile.display_name)}</span>
-                    <button class="logout-pc" id="logout-pc">退出</button>
+                    <div class="user-dropdown">
+                        <div class="user-trigger" id="user-trigger">
+                            <span>${escapeHtml(currentProfile.display_name)}</span>
+                            <span>▼</span>
+                        </div>
+                        <div class="dropdown-menu" id="dropdown-menu">
+                            ${dropdownItems.map(item => `
+                                <div class="dropdown-item" data-view="${item.id}">${item.label}</div>
+                            `).join('')}
+                            <div class="dropdown-item" id="logout-dropdown">🚪 退出</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
@@ -882,7 +1075,42 @@
         const fullHtml = `<div class="pc-app">${topBar}<div class="pc-content">${contentHtml}</div></div>`;
         document.getElementById('root').innerHTML = fullHtml;
 
-        // 绑定导航事件
+        // 下拉菜单交互
+        const trigger = document.getElementById('user-trigger');
+        const menu = document.getElementById('dropdown-menu');
+        if (trigger && menu) {
+            const toggleMenu = (show) => {
+                if (show) {
+                    menu.classList.add('show');
+                } else {
+                    menu.classList.remove('show');
+                }
+            };
+            trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleMenu(!menu.classList.contains('show'));
+            });
+            document.addEventListener('click', () => toggleMenu(false));
+            // 菜单项点击
+            document.querySelectorAll('.dropdown-item[data-view]').forEach(el => {
+                el.addEventListener('click', () => {
+                    currentView = el.dataset.view;
+                    currentChatUser = null;
+                    if (messagesSubscription) messagesSubscription.unsubscribe();
+                    renderApp();
+                    toggleMenu(false);
+                });
+            });
+            document.getElementById('logout-dropdown').onclick = async () => {
+                await _supabase.auth.signOut();
+                currentUser = null;
+                currentProfile = null;
+                if (messagesSubscription) messagesSubscription.unsubscribe();
+                renderRoot();
+            };
+        }
+
+        // 顶部导航（主页、聊天、好友）
         document.querySelectorAll('.pc-nav-item').forEach(el => {
             el.addEventListener('click', () => {
                 currentView = el.dataset.view;
@@ -891,13 +1119,6 @@
                 renderApp();
             });
         });
-        document.getElementById('logout-pc').onclick = async () => {
-            await _supabase.auth.signOut();
-            currentUser = null;
-            currentProfile = null;
-            if (messagesSubscription) messagesSubscription.unsubscribe();
-            renderRoot();
-        };
 
         if (currentView === 'chat') {
             attachChatEvents();
@@ -907,16 +1128,19 @@
         else if (currentView === 'admin' && currentProfile.is_admin) attachAdminEvents();
     }
 
-    // 手机版渲染
+    // 手机版渲染（底部导航，用户菜单改为顶部右上角下拉）
     async function renderMobile() {
         const bottomNavItems = [
             { id: 'home', icon: '🏠', label: '主页' },
             { id: 'chat', icon: '💬', label: '聊天' },
-            { id: 'friends', icon: '👥', label: '好友' },
-            { id: 'profile', icon: '😀', label: '我的' },
-            { id: 'settings', icon: '⚙️', label: '设置' }
+            { id: 'friends', icon: '👥', label: '好友' }
         ];
-        if (currentProfile.is_admin) bottomNavItems.push({ id: 'admin', icon: '🔧', label: '管理' });
+        // 手机版也将个人页面放入下拉菜单（点击头像）
+        const dropdownItems = [
+            { id: 'profile', label: '我的主页' },
+            { id: 'settings', label: '设置' }
+        ];
+        if (currentProfile.is_admin) dropdownItems.push({ id: 'admin', label: '管理' });
 
         let contentHtml = '';
         if (currentView === 'home') contentHtml = await renderHome();
@@ -929,8 +1153,18 @@
         const fullHtml = `
             <div class="mobile-app">
                 <div class="mobile-header">
-                    JChat
-                    <button class="logout-mobile" id="logout-mobile">退出</button>
+                    <span>JChat</span>
+                    <div style="position:absolute; right:16px; top:12px;">
+                        <div class="user-dropdown" style="display:inline-block;">
+                            <div class="user-trigger" id="mobile-user-trigger" style="background:none; padding:0;">
+                                👤 ${escapeHtml(currentProfile.display_name)} ▼
+                            </div>
+                            <div class="dropdown-menu" id="mobile-dropdown-menu" style="right:0; left:auto;">
+                                ${dropdownItems.map(item => `<div class="dropdown-item" data-view="${item.id}">${item.label}</div>`).join('')}
+                                <div class="dropdown-item" id="mobile-logout">退出</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="mobile-content" id="mobile-content">${contentHtml}</div>
                 <div class="bottom-nav">
@@ -945,6 +1179,37 @@
         `;
         document.getElementById('root').innerHTML = fullHtml;
 
+        // 手机版下拉菜单
+        const trigger = document.getElementById('mobile-user-trigger');
+        const menu = document.getElementById('mobile-dropdown-menu');
+        if (trigger && menu) {
+            const toggleMenu = (show) => {
+                if (show) menu.classList.add('show');
+                else menu.classList.remove('show');
+            };
+            trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleMenu(!menu.classList.contains('show'));
+            });
+            document.addEventListener('click', () => toggleMenu(false));
+            document.querySelectorAll('#mobile-dropdown-menu .dropdown-item[data-view]').forEach(el => {
+                el.addEventListener('click', () => {
+                    currentView = el.dataset.view;
+                    currentChatUser = null;
+                    if (messagesSubscription) messagesSubscription.unsubscribe();
+                    renderApp();
+                    toggleMenu(false);
+                });
+            });
+            document.getElementById('mobile-logout').onclick = async () => {
+                await _supabase.auth.signOut();
+                currentUser = null;
+                currentProfile = null;
+                if (messagesSubscription) messagesSubscription.unsubscribe();
+                renderRoot();
+            };
+        }
+
         document.querySelectorAll('.bottom-nav-item').forEach(el => {
             el.addEventListener('click', () => {
                 currentView = el.dataset.view;
@@ -953,13 +1218,6 @@
                 renderApp();
             });
         });
-        document.getElementById('logout-mobile').onclick = async () => {
-            await _supabase.auth.signOut();
-            currentUser = null;
-            currentProfile = null;
-            if (messagesSubscription) messagesSubscription.unsubscribe();
-            renderRoot();
-        };
 
         if (currentView === 'chat') {
             attachChatEvents();
@@ -969,7 +1227,7 @@
         else if (currentView === 'admin' && currentProfile.is_admin) attachAdminEvents();
     }
 
-    // 事件绑定（好友、设置、管理）
+    // 共用事件绑定
     function attachFriendEvents() {
         document.querySelectorAll('.accept-friend').forEach(btn => {
             btn.onclick = async () => {
@@ -1065,129 +1323,87 @@
             alert('公告已更新');
             renderApp();
         });
-
-        const selectAllCheckbox = document.getElementById('select-all');
-        if (selectAllCheckbox) {
-            selectAllCheckbox.addEventListener('change', (e) => {
-                document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = e.target.checked);
-            });
-        }
-
-        function getSelectedUserIds() {
-            const checkboxes = document.querySelectorAll('.user-checkbox:checked');
-            const ids = Array.from(checkboxes).map(cb => cb.value);
-            return ids.filter(id => id !== currentUser.id);
-        }
-
-        const batchSetAdmin = document.getElementById('batch-set-admin');
-        if (batchSetAdmin) batchSetAdmin.onclick = async () => {
-            const ids = getSelectedUserIds();
-            if (ids.length === 0) { alert('请先选择用户'); return; }
-            if (confirm(`确定将 ${ids.length} 个用户设为管理员吗？`)) {
-                for (const id of ids) await _supabase.from('public_profiles').update({ is_admin: true }).eq('id', id);
-                alert('操作完成'); renderApp();
-            }
-        };
-        const batchRemoveAdmin = document.getElementById('batch-remove-admin');
-        if (batchRemoveAdmin) batchRemoveAdmin.onclick = async () => {
-            const ids = getSelectedUserIds();
-            if (ids.length === 0) { alert('请先选择用户'); return; }
-            if (confirm(`确定将 ${ids.length} 个用户的管理员权限取消吗？`)) {
-                for (const id of ids) await _supabase.from('public_profiles').update({ is_admin: false }).eq('id', id);
-                alert('操作完成'); renderApp();
-            }
-        };
-        const batchMute = document.getElementById('batch-mute');
-        if (batchMute) batchMute.onclick = async () => {
-            const ids = getSelectedUserIds();
-            if (ids.length === 0) { alert('请先选择用户'); return; }
-            if (confirm(`确定禁言 ${ids.length} 个用户吗？`)) {
-                for (const id of ids) await _supabase.from('public_profiles').update({ is_muted: true }).eq('id', id);
-                alert('操作完成'); renderApp();
-            }
-        };
-        const batchUnmute = document.getElementById('batch-unmute');
-        if (batchUnmute) batchUnmute.onclick = async () => {
-            const ids = getSelectedUserIds();
-            if (ids.length === 0) { alert('请先选择用户'); return; }
-            if (confirm(`确定解除 ${ids.length} 个用户的禁言吗？`)) {
-                for (const id of ids) await _supabase.from('public_profiles').update({ is_muted: false }).eq('id', id);
-                alert('操作完成'); renderApp();
-            }
-        };
-        const batchDelete = document.getElementById('batch-delete');
-        if (batchDelete) batchDelete.onclick = async () => {
-            const ids = getSelectedUserIds();
-            if (ids.length === 0) { alert('请先选择用户'); return; }
-            if (confirm(`永久删除 ${ids.length} 个用户及其所有数据？不可恢复！`)) {
+        const selectAll = document.getElementById('select-all');
+        if (selectAll) selectAll.onchange = (e) => document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = e.target.checked);
+        const getSelected = () => Array.from(document.querySelectorAll('.user-checkbox:checked')).map(cb => cb.value).filter(id => id !== currentUser.id);
+        const batch = (ids, action) => action(ids);
+        document.getElementById('batch-set-admin')?.addEventListener('click', async () => {
+            const ids = getSelected();
+            if (!ids.length) return alert('请选择用户');
+            for (const id of ids) await _supabase.from('public_profiles').update({ is_admin: true }).eq('id', id);
+            alert('完成'); renderApp();
+        });
+        document.getElementById('batch-remove-admin')?.addEventListener('click', async () => {
+            const ids = getSelected();
+            if (!ids.length) return alert('请选择用户');
+            for (const id of ids) await _supabase.from('public_profiles').update({ is_admin: false }).eq('id', id);
+            alert('完成'); renderApp();
+        });
+        document.getElementById('batch-mute')?.addEventListener('click', async () => {
+            const ids = getSelected();
+            if (!ids.length) return alert('请选择用户');
+            for (const id of ids) await _supabase.from('public_profiles').update({ is_muted: true }).eq('id', id);
+            alert('完成'); renderApp();
+        });
+        document.getElementById('batch-unmute')?.addEventListener('click', async () => {
+            const ids = getSelected();
+            if (!ids.length) return alert('请选择用户');
+            for (const id of ids) await _supabase.from('public_profiles').update({ is_muted: false }).eq('id', id);
+            alert('完成'); renderApp();
+        });
+        document.getElementById('batch-delete')?.addEventListener('click', async () => {
+            const ids = getSelected();
+            if (!ids.length) return alert('请选择用户');
+            if (confirm(`删除 ${ids.length} 个用户？`)) {
                 for (const id of ids) {
                     await _supabase.from('public_profiles').update({ deleted_at: new Date().toISOString() }).eq('id', id);
                     await _supabase.from('friendships').delete().or(`user_id.eq.${id},friend_id.eq.${id}`);
                 }
-                alert('操作完成'); renderApp();
+                alert('完成'); renderApp();
             }
-        };
-
-        document.querySelectorAll('.set-admin').forEach(btn => {
-            btn.onclick = async () => {
-                const userId = btn.dataset.id;
-                if (userId === currentUser.id) { alert('不能对自己操作'); return; }
-                await _supabase.from('public_profiles').update({ is_admin: true }).eq('id', userId);
-                alert('已设为管理员'); renderApp();
-            };
         });
-        document.querySelectorAll('.remove-admin').forEach(btn => {
-            btn.onclick = async () => {
+        document.querySelectorAll('.set-admin, .remove-admin, .toggle-mute, .admin-del').forEach(btn => {
+            btn.onclick = async (e) => {
                 const userId = btn.dataset.id;
-                if (userId === currentUser.id) { alert('不能对自己操作'); return; }
-                await _supabase.from('public_profiles').update({ is_admin: false }).eq('id', userId);
-                alert('已取消管理员'); renderApp();
-            };
-        });
-        document.querySelectorAll('.toggle-mute').forEach(btn => {
-            btn.onclick = async () => {
-                const userId = btn.dataset.id;
-                if (userId === currentUser.id) { alert('不能对自己操作'); return; }
-                const { data: user } = await _supabase.from('public_profiles').select('is_muted').eq('id', userId).single();
-                const newMuted = !user.is_muted;
-                await _supabase.from('public_profiles').update({ is_muted: newMuted }).eq('id', userId);
-                alert(newMuted ? '已禁言' : '已解除禁言'); renderApp();
-            };
-        });
-        document.querySelectorAll('.admin-del').forEach(btn => {
-            btn.onclick = async () => {
-                const userId = btn.dataset.id;
-                if (userId === currentUser.id) { alert('不能删除自己'); return; }
-                if (!confirm('确定删除该用户？')) return;
-                await _supabase.from('public_profiles').update({ deleted_at: new Date().toISOString() }).eq('id', userId);
-                await _supabase.from('friendships').delete().or(`user_id.eq.${userId},friend_id.eq.${userId}`);
-                alert('用户已删除'); renderApp();
+                if (userId === currentUser.id) return alert('不能对自己操作');
+                if (btn.classList.contains('set-admin')) {
+                    await _supabase.from('public_profiles').update({ is_admin: true }).eq('id', userId);
+                    alert('已设为管理员');
+                } else if (btn.classList.contains('remove-admin')) {
+                    await _supabase.from('public_profiles').update({ is_admin: false }).eq('id', userId);
+                    alert('已取消管理员');
+                } else if (btn.classList.contains('toggle-mute')) {
+                    const { data: user } = await _supabase.from('public_profiles').select('is_muted').eq('id', userId).single();
+                    await _supabase.from('public_profiles').update({ is_muted: !user.is_muted }).eq('id', userId);
+                    alert(!user.is_muted ? '已禁言' : '已解除禁言');
+                } else if (btn.classList.contains('admin-del')) {
+                    if (confirm('删除该用户？')) {
+                        await _supabase.from('public_profiles').update({ deleted_at: new Date().toISOString() }).eq('id', userId);
+                        await _supabase.from('friendships').delete().or(`user_id.eq.${userId},friend_id.eq.${userId}`);
+                        alert('已删除');
+                    }
+                }
+                renderApp();
             };
         });
         document.getElementById('admin-create-user')?.addEventListener('click', async () => {
             const username = document.getElementById('new-admin-name').value.trim();
             const pwd = document.getElementById('new-admin-pwd').value;
-            if (!username || !pwd) { alert('请填写用户名和密码'); return; }
+            if (!username || !pwd) return alert('请填写');
             const { data: existing } = await _supabase.from('public_profiles').select('id').eq('display_name', username).maybeSingle();
-            if (existing) { alert('用户名已存在'); return; }
+            if (existing) return alert('用户名已存在');
             const randomEmail = crypto.randomUUID() + EMAIL_SUFFIX;
             const { data, error } = await _supabase.auth.signUp({ email: randomEmail, password: pwd });
-            if (error) { alert('创建失败: ' + error.message); return; }
+            if (error) return alert(error.message);
             if (data.user) {
-                await _supabase.from('public_profiles').insert({
-                    id: data.user.id,
-                    email: randomEmail,
-                    display_name: username,
-                    is_admin: false,
-                    is_muted: false,
-                    bio: ''
-                });
-                alert('用户创建成功'); renderApp();
+                await _supabase.from('public_profiles').insert({ id: data.user.id, email: randomEmail, display_name: username, is_admin: false, is_muted: false, bio: '' });
+                alert('创建成功');
+                renderApp();
             }
         });
     }
 
-    // 主渲染路由
+    // 主路由
     async function renderApp() {
         if (!currentProfile) {
             try {
@@ -1202,6 +1418,20 @@
         } else {
             await renderPc();
         }
+        // 绑定主页通知栏点击跳转
+        if (currentView === 'home') {
+            document.querySelectorAll('.notification-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    const fromId = el.dataset.fromId;
+                    if (fromId) {
+                        // 跳转到聊天并定位到该好友
+                        currentView = 'chat';
+                        currentChatUser = { id: fromId, display_name: el.innerText.split(' ')[0] }; // 简化获取名称
+                        renderApp();
+                    }
+                });
+            });
+        }
     }
 
     async function renderRoot() {
@@ -1210,6 +1440,7 @@
             currentUser = session.user;
             try {
                 currentProfile = await fetchCurrentProfile();
+                await loadUnreadCounts();
                 currentView = 'home';
                 renderApp();
             } catch (err) {
