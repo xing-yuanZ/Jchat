@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>JChat - 管理员批量管理</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>JChat</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
@@ -11,14 +11,18 @@
             padding: 0;
             box-sizing: border-box;
         }
+
         html, body, #root {
             height: 100%;
             overflow: hidden;
         }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: #f5f7fb;
         }
+
+        /* 登录页共用 */
         .auth-page {
             height: 100%;
             display: flex;
@@ -65,41 +69,56 @@
             margin-bottom: 12px;
             text-align: center;
         }
-        .app-root {
+
+        /* 电脑版布局 (默认) */
+        .pc-app {
             display: flex;
             flex-direction: column;
             height: 100%;
-            width: 100%;
         }
-        .top-nav {
+        .pc-top-bar {
             background: white;
             border-bottom: 1px solid #eef2f6;
-            padding: 0 20px;
+            padding: 0 24px;
             display: flex;
             align-items: center;
-            gap: 12px;
-            overflow-x: auto;
+            justify-content: space-between;
+            height: 60px;
             flex-shrink: 0;
         }
-        .nav-item {
-            padding: 16px 16px;
-            font-size: 15px;
-            font-weight: 500;
-            color: #5b677b;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
         }
-        .nav-item.active {
-            color: #007aff;
-            border-bottom-color: #007aff;
-        }
-        .user-info {
-            margin-left: auto;
+        .pc-nav {
             display: flex;
+            gap: 12px;
             align-items: center;
-            gap: 16px;
         }
-        .logout-btn {
+        .pc-nav-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 20px;
+            transition: background 0.2s;
+            font-size: 14px;
+        }
+        .pc-nav-item:hover {
+            background: #eef2ff;
+        }
+        .pc-nav-item.active {
+            background: #e0e7ff;
+            color: #007aff;
+            font-weight: 500;
+        }
+        .user-name {
+            margin-left: 12px;
+            font-weight: 500;
+        }
+        .logout-pc {
             background: #ef4444;
             border: none;
             padding: 6px 14px;
@@ -107,10 +126,81 @@
             color: white;
             cursor: pointer;
         }
-        .main-content {
+        .pc-content {
             flex: 1;
             overflow: hidden;
+        }
+
+        /* 手机版布局 */
+        .mobile-app {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .mobile-header {
+            background: white;
+            border-bottom: 1px solid #eef2f6;
+            padding: 12px 20px;
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
             position: relative;
+            flex-shrink: 0;
+        }
+        .mobile-header .logout-mobile {
+            position: absolute;
+            right: 16px;
+            top: 12px;
+            background: none;
+            border: none;
+            font-size: 14px;
+            color: #ef4444;
+            cursor: pointer;
+        }
+        .mobile-content {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 70px;  /* 为底部导航留空间 */
+        }
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #eef2f6;
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 12px 12px;
+            z-index: 100;
+        }
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            color: #8e8e93;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 30px;
+        }
+        .bottom-nav-item.active {
+            color: #007aff;
+            font-weight: 500;
+            background: rgba(0,122,255,0.08);
+        }
+        .bottom-icon {
+            font-size: 22px;
+        }
+
+        /* 共用内容样式（卡片、聊天布局等） */
+        .main-content-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
         .chat-layout {
             display: flex;
@@ -230,12 +320,46 @@
             color: white;
             cursor: pointer;
         }
-        .card {
-            background: white;
-            border-radius: 16px;
-            padding: 20px;
-            margin: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        .friend-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .profile-header {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        .profile-avatar-lg {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #667eea;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 32px;
+            font-weight: bold;
+        }
+        button {
+            background: #007aff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+        }
+        .danger-btn {
+            background: #ef4444;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 12px;
         }
         .table-wrapper {
             max-height: 400px;
@@ -265,56 +389,6 @@
             margin-bottom: 16px;
             align-items: center;
         }
-        .batch-bar button {
-            background: #6c757d;
-        }
-        .batch-bar .btn-primary {
-            background: #007aff;
-        }
-        .batch-bar .btn-danger {
-            background: #dc3545;
-        }
-        button {
-            background: #007aff;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            color: white;
-            cursor: pointer;
-        }
-        .danger-btn {
-            background: #ef4444;
-        }
-        input, textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            margin-bottom: 12px;
-        }
-        .profile-header {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-        }
-        .profile-avatar-lg {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: #667eea;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 32px;
-            font-weight: bold;
-        }
-        .friend-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
         .checkbox-col {
             width: 30px;
             text-align: center;
@@ -325,13 +399,29 @@
             cursor: pointer;
             margin: 0;
         }
+
+        /* 手机版适配聊天布局 */
+        @media (max-width: 768px) {
+            .chat-layout {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                max-height: 200px;
+                border-right: none;
+                border-bottom: 1px solid #eef2f6;
+            }
+            .chat-area {
+                height: calc(100% - 200px);
+            }
+        }
     </style>
 </head>
 <body>
 <div id="root"></div>
 
 <script>
-    // ==================== 你的 Supabase 配置 ====================
+    // ==================== Supabase 配置 ====================
     const SUPABASE_URL = 'https://cxilodvbdhtxtrldoswl.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_36lHK24HL6drOmuhSTTv8g_w2n0fU5H';
     // =======================================================
@@ -344,6 +434,15 @@
     let currentView = 'home';
     let currentChatUser = null;
     let messagesSubscription = null;
+    let isMobile = window.innerWidth <= 768;
+
+    window.addEventListener('resize', () => {
+        const newIsMobile = window.innerWidth <= 768;
+        if (newIsMobile !== isMobile) {
+            isMobile = newIsMobile;
+            if (currentUser && currentProfile) renderApp();
+        }
+    });
 
     function escapeHtml(str) {
         if (!str) return '';
@@ -444,7 +543,6 @@
                     errorDiv.innerText = '登录失败，请刷新重试';
                 }
             } else {
-                // 注册防重
                 const { data: existing } = await _supabase
                     .from('public_profiles')
                     .select('id')
@@ -493,73 +591,121 @@
         };
     }
 
-    // 主应用渲染
-    async function renderApp() {
-        if (!currentProfile) {
-            try {
-                currentProfile = await fetchCurrentProfile();
-            } catch (err) {
-                document.getElementById('root').innerHTML = '<div style="text-align:center;padding:40px;">加载失败，请刷新页面</div>';
-                return;
-            }
-        }
-
-        const navItems = [
-            { id: 'home', label: '🏠 主页' },
-            { id: 'chat', label: '💬 聊天' },
-            { id: 'friends', label: '👥 好友' },
-            { id: 'profile', label: '😀 我的主页' },
-            { id: 'settings', label: '⚙️ 设置' }
-        ];
-        if (currentProfile.is_admin) navItems.push({ id: 'admin', label: '🔧 管理' });
-
-        const topNavHtml = `
-            <div class="top-nav">
-                ${navItems.map(item => `
-                    <div class="nav-item ${currentView === item.id ? 'active' : ''}" data-view="${item.id}">${item.label}</div>
-                `).join('')}
-                <div class="user-info">
-                    <span>${escapeHtml(currentProfile.display_name)}</span>
-                    <button class="logout-btn" id="logout-btn">退出</button>
-                </div>
-            </div>
-        `;
-
-        let mainHtml = '';
-        if (currentView === 'home') mainHtml = await renderHome();
-        else if (currentView === 'chat') mainHtml = renderChatView();
-        else if (currentView === 'friends') mainHtml = await renderFriends();
-        else if (currentView === 'profile') mainHtml = await renderMyProfile();
-        else if (currentView === 'settings') mainHtml = renderSettings();
-        else if (currentView === 'admin' && currentProfile.is_admin) mainHtml = await renderAdmin();
-
-        document.getElementById('root').innerHTML = `<div class="app-root">${topNavHtml}<div class="main-content">${mainHtml}</div></div>`;
-
-        document.querySelectorAll('.nav-item').forEach(el => {
-            el.addEventListener('click', () => {
-                currentView = el.dataset.view;
-                currentChatUser = null;
-                if (messagesSubscription) messagesSubscription.unsubscribe();
-                renderApp();
-            });
-        });
-        document.getElementById('logout-btn').onclick = async () => {
-            await _supabase.auth.signOut();
-            currentUser = null;
-            currentProfile = null;
-            if (messagesSubscription) messagesSubscription.unsubscribe();
-            renderRoot();
-        };
-
-        if (currentView === 'chat') {
-            attachChatEvents();
-            subscribeMessages();
-        } else if (currentView === 'friends') attachFriendEvents();
-        else if (currentView === 'settings') attachSettingsEvents();
-        else if (currentView === 'admin' && currentProfile.is_admin) attachAdminEvents();
+    // ---------- 页面渲染函数（手机/电脑共用内容） ----------
+    async function renderHome() {
+        const { data: ann } = await _supabase.from('announcements').select('content').order('created_at', { ascending: false }).limit(1);
+        const announcement = ann?.[0]?.content || '欢迎使用 JChat！';
+        return `<div class="main-content-card"><h3>📢 公告</h3><p>${escapeHtml(announcement)}</p></div>`;
     }
 
-    // 聊天视图（省略，与之前相同，保证完整）
+    async function renderFriends() {
+        const { data: requests } = await _supabase.from('friendships').select('id, user_id').eq('friend_id', currentUser.id).eq('status', 'pending');
+        let requestUsers = [];
+        if (requests?.length) {
+            const { data } = await _supabase.from('public_profiles').select('id, display_name').in('id', requests.map(r => r.user_id)).is('deleted_at', null);
+            requestUsers = data || [];
+        }
+        const requestsHtml = requestUsers.map(r => `
+            <div class="friend-item" data-request-id="${requests.find(req => req.user_id === r.id).id}">
+                <span>${escapeHtml(r.display_name)} 请求添加好友</span>
+                <div><button class="accept-friend">接受</button> <button class="reject-friend" style="background:#aaa;">拒绝</button></div>
+            </div>
+        `).join('');
+        const { data: friendships } = await _supabase.from('friendships').select('user_id, friend_id').or(`user_id.eq.${currentUser.id},friend_id.eq.${currentUser.id}`).eq('status', 'accepted');
+        let fids = [];
+        friendships?.forEach(f => {
+            if (f.user_id === currentUser.id) fids.push(f.friend_id);
+            else fids.push(f.user_id);
+        });
+        let friends = [];
+        if (fids.length) {
+            const { data } = await _supabase.from('public_profiles').select('id, display_name').in('id', fids).is('deleted_at', null);
+            friends = data || [];
+        }
+        const friendsHtml = friends.map(f => `<div class="friend-item" style="justify-content:flex-start;"><span>${escapeHtml(f.display_name)}</span></div>`).join('');
+        return `
+            <div class="main-content-card"><h3>好友请求</h3>${requestsHtml || '<div>暂无</div>'}</div>
+            <div class="main-content-card"><h3>我的好友</h3>${friendsHtml || '<div>暂无好友</div>'}</div>
+            <div class="main-content-card"><h3>添加好友</h3><input id="add-friend-name" placeholder="输入用户名"><button id="search-add">搜索并添加</button></div>
+        `;
+    }
+
+    async function renderMyProfile() {
+        return `
+            <div class="main-content-card">
+                <div class="profile-header">
+                    <div class="profile-avatar-lg">${getInitial(currentProfile.display_name)}</div>
+                    <div>
+                        <div style="font-size:24px; font-weight:600;">${escapeHtml(currentProfile.display_name)}</div>
+                        <div>${currentProfile.is_admin ? '管理员' : '普通用户'}</div>
+                        ${currentProfile.is_muted ? '<div style="color:red;">⛔ 禁言中</div>' : ''}
+                    </div>
+                </div>
+                <div><strong>简介</strong><br>${escapeHtml(currentProfile.bio || '这个人很懒')}</div>
+                <div><strong>加入时间</strong><br>${new Date(currentProfile.created_at).toLocaleDateString()}</div>
+            </div>
+        `;
+    }
+
+    function renderSettings() {
+        return `
+            <div class="main-content-card"><h3>更改昵称</h3><input id="new-name" value="${escapeHtml(currentProfile.display_name)}"><button id="update-name">保存</button></div>
+            <div class="main-content-card"><h3>修改密码</h3><input type="password" id="old-pwd" placeholder="当前密码"><input type="password" id="new-pwd" placeholder="新密码"><button id="update-pwd">更新密码</button></div>
+            <div class="main-content-card"><h3>个人简介</h3><textarea id="bio-text" rows="2">${escapeHtml(currentProfile.bio || '')}</textarea><button id="update-bio">保存简介</button></div>
+            <div class="main-content-card"><h3>上传头像</h3><input type="file" id="avatar-file" accept="image/*"><button id="upload-avatar">上传</button></div>
+            <div class="main-content-card"><h3>危险区域</h3><button id="delete-account" class="danger-btn">永久删除账户</button></div>
+        `;
+    }
+
+    async function renderAdmin() {
+        const { data: users } = await _supabase.from('public_profiles').select('*').is('deleted_at', null);
+        const { data: ann } = await _supabase.from('announcements').select('content').order('created_at', { ascending: false }).limit(1);
+        const currentAnn = ann?.[0]?.content || '';
+        return `
+            <div class="main-content-card"><h3>编辑公告</h3><textarea id="admin-announcement" rows="2">${escapeHtml(currentAnn)}</textarea><button id="save-announcement">保存公告</button></div>
+            <div class="main-content-card">
+                <h3>用户管理</h3>
+                <div class="batch-bar">
+                    <span style="margin-right:8px;">批量操作：</span>
+                    <button id="batch-set-admin" class="btn-primary">设为管理员</button>
+                    <button id="batch-remove-admin">取消管理员</button>
+                    <button id="batch-mute">禁言</button>
+                    <button id="batch-unmute">解除禁言</button>
+                    <button id="batch-delete" class="btn-danger">删除</button>
+                    <label style="margin-left:auto;">
+                        <input type="checkbox" id="select-all"> 全选
+                    </label>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th class="checkbox-col"></th><th>用户名</th><th>管理员</th><th>禁言</th><th>操作</th></tr>
+                        </thead>
+                        <tbody id="admin-user-table">
+                            ${users?.map(u => `
+                                <tr data-user-id="${u.id}">
+                                    <td class="checkbox-col"><input type="checkbox" class="user-checkbox" value="${u.id}"></td>
+                                    <td>${escapeHtml(u.display_name)}</td>
+                                    <td>${u.is_admin ? '是' : '否'}</td>
+                                    <td>${u.is_muted ? '是' : '否'}</td>
+                                    <td>
+                                        ${u.id !== currentUser.id ? `
+                                            ${u.is_admin ? `<button class="remove-admin" data-id="${u.id}">取消管理员</button>` : `<button class="set-admin" data-id="${u.id}">设为管理员</button>`}
+                                            <button class="toggle-mute" data-id="${u.id}">${u.is_muted ? '解除禁言' : '禁言'}</button>
+                                            <button class="admin-del" data-id="${u.id}">删除</button>
+                                        ` : '<span style="color:#999;">(自己)</span>'}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="main-content-card"><h3>创建新用户</h3><input id="new-admin-name" placeholder="用户名"><input id="new-admin-pwd" placeholder="密码"><button id="admin-create-user">创建</button></div>
+        `;
+    }
+
+    // 聊天视图 (电脑版和手机版共用)
     function renderChatView() {
         return `
             <div class="chat-layout">
@@ -701,46 +847,129 @@
             .subscribe();
     }
 
-    // 主页
-    async function renderHome() {
-        const { data: ann } = await _supabase.from('announcements').select('content').order('created_at', { ascending: false }).limit(1);
-        const announcement = ann?.[0]?.content || '欢迎使用 JChat！';
-        return `<div class="card"><h3>📢 公告</h3><p>${escapeHtml(announcement)}</p></div>`;
-    }
+    // 电脑版渲染
+    async function renderPc() {
+        const navItems = [
+            { id: 'home', label: '主页' },
+            { id: 'chat', label: '聊天' },
+            { id: 'friends', label: '好友' },
+            { id: 'profile', label: '我的主页' },
+            { id: 'settings', label: '设置' }
+        ];
+        if (currentProfile.is_admin) navItems.push({ id: 'admin', label: '管理' });
 
-    // 好友页面（与之前相同）
-    async function renderFriends() {
-        const { data: requests } = await _supabase.from('friendships').select('id, user_id').eq('friend_id', currentUser.id).eq('status', 'pending');
-        let requestUsers = [];
-        if (requests?.length) {
-            const { data } = await _supabase.from('public_profiles').select('id, display_name').in('id', requests.map(r => r.user_id)).is('deleted_at', null);
-            requestUsers = data || [];
-        }
-        const requestsHtml = requestUsers.map(r => `
-            <div class="friend-item" data-request-id="${requests.find(req => req.user_id === r.id).id}">
-                <span>${escapeHtml(r.display_name)} 请求添加好友</span>
-                <div><button class="accept-friend">接受</button> <button class="reject-friend" style="background:#aaa;">拒绝</button></div>
+        const topBar = `
+            <div class="pc-top-bar">
+                <div class="logo">JChat</div>
+                <div class="pc-nav">
+                    ${navItems.map(item => `
+                        <div class="pc-nav-item ${currentView === item.id ? 'active' : ''}" data-view="${item.id}">${item.label}</div>
+                    `).join('')}
+                    <span class="user-name">${escapeHtml(currentProfile.display_name)}</span>
+                    <button class="logout-pc" id="logout-pc">退出</button>
+                </div>
             </div>
-        `).join('');
-        const { data: friendships } = await _supabase.from('friendships').select('user_id, friend_id').or(`user_id.eq.${currentUser.id},friend_id.eq.${currentUser.id}`).eq('status', 'accepted');
-        let fids = [];
-        friendships?.forEach(f => {
-            if (f.user_id === currentUser.id) fids.push(f.friend_id);
-            else fids.push(f.user_id);
-        });
-        let friends = [];
-        if (fids.length) {
-            const { data } = await _supabase.from('public_profiles').select('id, display_name').in('id', fids).is('deleted_at', null);
-            friends = data || [];
-        }
-        const friendsHtml = friends.map(f => `<div class="friend-item" style="justify-content:flex-start;"><span>${escapeHtml(f.display_name)}</span></div>`).join('');
-        return `
-            <div class="card"><h3>好友请求</h3>${requestsHtml || '<div>暂无</div>'}</div>
-            <div class="card"><h3>我的好友</h3>${friendsHtml || '<div>暂无好友</div>'}</div>
-            <div class="card"><h3>添加好友</h3><input id="add-friend-name" placeholder="输入用户名"><button id="search-add">搜索并添加</button></div>
         `;
+
+        let contentHtml = '';
+        if (currentView === 'home') contentHtml = await renderHome();
+        else if (currentView === 'chat') contentHtml = renderChatView();
+        else if (currentView === 'friends') contentHtml = await renderFriends();
+        else if (currentView === 'profile') contentHtml = await renderMyProfile();
+        else if (currentView === 'settings') contentHtml = renderSettings();
+        else if (currentView === 'admin' && currentProfile.is_admin) contentHtml = await renderAdmin();
+
+        const fullHtml = `<div class="pc-app">${topBar}<div class="pc-content">${contentHtml}</div></div>`;
+        document.getElementById('root').innerHTML = fullHtml;
+
+        // 绑定导航事件
+        document.querySelectorAll('.pc-nav-item').forEach(el => {
+            el.addEventListener('click', () => {
+                currentView = el.dataset.view;
+                currentChatUser = null;
+                if (messagesSubscription) messagesSubscription.unsubscribe();
+                renderApp();
+            });
+        });
+        document.getElementById('logout-pc').onclick = async () => {
+            await _supabase.auth.signOut();
+            currentUser = null;
+            currentProfile = null;
+            if (messagesSubscription) messagesSubscription.unsubscribe();
+            renderRoot();
+        };
+
+        if (currentView === 'chat') {
+            attachChatEvents();
+            subscribeMessages();
+        } else if (currentView === 'friends') attachFriendEvents();
+        else if (currentView === 'settings') attachSettingsEvents();
+        else if (currentView === 'admin' && currentProfile.is_admin) attachAdminEvents();
     }
 
+    // 手机版渲染
+    async function renderMobile() {
+        const bottomNavItems = [
+            { id: 'home', icon: '🏠', label: '主页' },
+            { id: 'chat', icon: '💬', label: '聊天' },
+            { id: 'friends', icon: '👥', label: '好友' },
+            { id: 'profile', icon: '😀', label: '我的' },
+            { id: 'settings', icon: '⚙️', label: '设置' }
+        ];
+        if (currentProfile.is_admin) bottomNavItems.push({ id: 'admin', icon: '🔧', label: '管理' });
+
+        let contentHtml = '';
+        if (currentView === 'home') contentHtml = await renderHome();
+        else if (currentView === 'chat') contentHtml = renderChatView();
+        else if (currentView === 'friends') contentHtml = await renderFriends();
+        else if (currentView === 'profile') contentHtml = await renderMyProfile();
+        else if (currentView === 'settings') contentHtml = renderSettings();
+        else if (currentView === 'admin' && currentProfile.is_admin) contentHtml = await renderAdmin();
+
+        const fullHtml = `
+            <div class="mobile-app">
+                <div class="mobile-header">
+                    JChat
+                    <button class="logout-mobile" id="logout-mobile">退出</button>
+                </div>
+                <div class="mobile-content" id="mobile-content">${contentHtml}</div>
+                <div class="bottom-nav">
+                    ${bottomNavItems.map(item => `
+                        <div class="bottom-nav-item ${currentView === item.id ? 'active' : ''}" data-view="${item.id}">
+                            <div class="bottom-icon">${item.icon}</div>
+                            <span>${item.label}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+        document.getElementById('root').innerHTML = fullHtml;
+
+        document.querySelectorAll('.bottom-nav-item').forEach(el => {
+            el.addEventListener('click', () => {
+                currentView = el.dataset.view;
+                currentChatUser = null;
+                if (messagesSubscription) messagesSubscription.unsubscribe();
+                renderApp();
+            });
+        });
+        document.getElementById('logout-mobile').onclick = async () => {
+            await _supabase.auth.signOut();
+            currentUser = null;
+            currentProfile = null;
+            if (messagesSubscription) messagesSubscription.unsubscribe();
+            renderRoot();
+        };
+
+        if (currentView === 'chat') {
+            attachChatEvents();
+            subscribeMessages();
+        } else if (currentView === 'friends') attachFriendEvents();
+        else if (currentView === 'settings') attachSettingsEvents();
+        else if (currentView === 'admin' && currentProfile.is_admin) attachAdminEvents();
+    }
+
+    // 事件绑定（好友、设置、管理）
     function attachFriendEvents() {
         document.querySelectorAll('.accept-friend').forEach(btn => {
             btn.onclick = async () => {
@@ -771,35 +1000,6 @@
                 renderApp();
             };
         }
-    }
-
-    // 我的主页
-    async function renderMyProfile() {
-        return `
-            <div class="card">
-                <div class="profile-header">
-                    <div class="profile-avatar-lg">${getInitial(currentProfile.display_name)}</div>
-                    <div>
-                        <div style="font-size:24px; font-weight:600;">${escapeHtml(currentProfile.display_name)}</div>
-                        <div>${currentProfile.is_admin ? '管理员' : '普通用户'}</div>
-                        ${currentProfile.is_muted ? '<div style="color:red;">⛔ 禁言中</div>' : ''}
-                    </div>
-                </div>
-                <div><strong>简介</strong><br>${escapeHtml(currentProfile.bio || '这个人很懒')}</div>
-                <div><strong>加入时间</strong><br>${new Date(currentProfile.created_at).toLocaleDateString()}</div>
-            </div>
-        `;
-    }
-
-    // 设置
-    function renderSettings() {
-        return `
-            <div class="card"><h3>更改昵称</h3><input id="new-name" value="${escapeHtml(currentProfile.display_name)}"><button id="update-name">保存</button></div>
-            <div class="card"><h3>修改密码</h3><input type="password" id="old-pwd" placeholder="当前密码"><input type="password" id="new-pwd" placeholder="新密码"><button id="update-pwd">更新密码</button></div>
-            <div class="card"><h3>个人简介</h3><textarea id="bio-text" rows="2">${escapeHtml(currentProfile.bio || '')}</textarea><button id="update-bio">保存简介</button></div>
-            <div class="card"><h3>上传头像</h3><input type="file" id="avatar-file" accept="image/*"><button id="upload-avatar">上传</button></div>
-            <div class="card"><h3>危险区域</h3><button id="delete-account" class="danger-btn">永久删除账户</button></div>
-        `;
     }
 
     function attachSettingsEvents() {
@@ -856,57 +1056,7 @@
         });
     }
 
-    // ==================== 管理面板（批量管理 + 收回管理员） ====================
-    async function renderAdmin() {
-        const { data: users } = await _supabase.from('public_profiles').select('*').is('deleted_at', null);
-        const { data: ann } = await _supabase.from('announcements').select('content').order('created_at', { ascending: false }).limit(1);
-        const currentAnn = ann?.[0]?.content || '';
-        return `
-            <div class="card"><h3>编辑公告</h3><textarea id="admin-announcement" rows="2">${escapeHtml(currentAnn)}</textarea><button id="save-announcement">保存公告</button></div>
-            <div class="card">
-                <h3>用户管理</h3>
-                <div class="batch-bar">
-                    <span style="margin-right:8px;">批量操作：</span>
-                    <button id="batch-set-admin" class="btn-primary">设为管理员</button>
-                    <button id="batch-remove-admin">取消管理员</button>
-                    <button id="batch-mute">禁言</button>
-                    <button id="batch-unmute">解除禁言</button>
-                    <button id="batch-delete" class="btn-danger">删除</button>
-                    <label style="margin-left:auto;">
-                        <input type="checkbox" id="select-all"> 全选
-                    </label>
-                </div>
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr><th class="checkbox-col"><span style="display:none;">勾选</span></th><th>用户名</th><th>管理员</th><th>禁言</th><th>操作</th></tr>
-                        </thead>
-                        <tbody id="admin-user-table">
-                            ${users?.map(u => `
-                                <tr data-user-id="${u.id}">
-                                    <td class="checkbox-col"><input type="checkbox" class="user-checkbox" value="${u.id}"></td>
-                                    <td>${escapeHtml(u.display_name)}</td>
-                                    <td>${u.is_admin ? '是' : '否'}</td>
-                                    <td>${u.is_muted ? '是' : '否'}</td>
-                                    <td>
-                                        ${u.id !== currentUser.id ? `
-                                            ${u.is_admin ? `<button class="remove-admin" data-id="${u.id}">取消管理员</button>` : `<button class="set-admin" data-id="${u.id}">设为管理员</button>`}
-                                            <button class="toggle-mute" data-id="${u.id}">${u.is_muted ? '解除禁言' : '禁言'}</button>
-                                            <button class="admin-del" data-id="${u.id}">删除</button>
-                                        ` : '<span style="color:#999;">(自己)</span>'}
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="card"><h3>创建新用户</h3><input id="new-admin-name" placeholder="用户名"><input id="new-admin-pwd" placeholder="密码"><button id="admin-create-user">创建</button></div>
-        `;
-    }
-
     function attachAdminEvents() {
-        // 保存公告
         document.getElementById('save-announcement')?.addEventListener('click', async () => {
             const content = document.getElementById('admin-announcement').value;
             if (!content) return;
@@ -916,7 +1066,6 @@
             renderApp();
         });
 
-        // 全选/取消全选
         const selectAllCheckbox = document.getElementById('select-all');
         if (selectAllCheckbox) {
             selectAllCheckbox.addEventListener('change', (e) => {
@@ -924,103 +1073,67 @@
             });
         }
 
-        // 获取选中的用户ID列表（排除自己）
         function getSelectedUserIds() {
             const checkboxes = document.querySelectorAll('.user-checkbox:checked');
             const ids = Array.from(checkboxes).map(cb => cb.value);
-            // 过滤掉当前登录用户自己（避免对自己操作）
             return ids.filter(id => id !== currentUser.id);
         }
 
-        // 批量设为管理员
         const batchSetAdmin = document.getElementById('batch-set-admin');
-        if (batchSetAdmin) {
-            batchSetAdmin.onclick = async () => {
-                const ids = getSelectedUserIds();
-                if (ids.length === 0) { alert('请先选择用户'); return; }
-                if (confirm(`确定将 ${ids.length} 个用户设为管理员吗？`)) {
-                    for (const id of ids) {
-                        await _supabase.from('public_profiles').update({ is_admin: true }).eq('id', id);
-                    }
-                    alert('操作完成');
-                    renderApp();
-                }
-            };
-        }
-
-        // 批量取消管理员
+        if (batchSetAdmin) batchSetAdmin.onclick = async () => {
+            const ids = getSelectedUserIds();
+            if (ids.length === 0) { alert('请先选择用户'); return; }
+            if (confirm(`确定将 ${ids.length} 个用户设为管理员吗？`)) {
+                for (const id of ids) await _supabase.from('public_profiles').update({ is_admin: true }).eq('id', id);
+                alert('操作完成'); renderApp();
+            }
+        };
         const batchRemoveAdmin = document.getElementById('batch-remove-admin');
-        if (batchRemoveAdmin) {
-            batchRemoveAdmin.onclick = async () => {
-                const ids = getSelectedUserIds();
-                if (ids.length === 0) { alert('请先选择用户'); return; }
-                if (confirm(`确定将 ${ids.length} 个用户的管理员权限取消吗？`)) {
-                    for (const id of ids) {
-                        await _supabase.from('public_profiles').update({ is_admin: false }).eq('id', id);
-                    }
-                    alert('操作完成');
-                    renderApp();
-                }
-            };
-        }
-
-        // 批量禁言
+        if (batchRemoveAdmin) batchRemoveAdmin.onclick = async () => {
+            const ids = getSelectedUserIds();
+            if (ids.length === 0) { alert('请先选择用户'); return; }
+            if (confirm(`确定将 ${ids.length} 个用户的管理员权限取消吗？`)) {
+                for (const id of ids) await _supabase.from('public_profiles').update({ is_admin: false }).eq('id', id);
+                alert('操作完成'); renderApp();
+            }
+        };
         const batchMute = document.getElementById('batch-mute');
-        if (batchMute) {
-            batchMute.onclick = async () => {
-                const ids = getSelectedUserIds();
-                if (ids.length === 0) { alert('请先选择用户'); return; }
-                if (confirm(`确定禁言 ${ids.length} 个用户吗？`)) {
-                    for (const id of ids) {
-                        await _supabase.from('public_profiles').update({ is_muted: true }).eq('id', id);
-                    }
-                    alert('操作完成');
-                    renderApp();
-                }
-            };
-        }
-
-        // 批量解除禁言
+        if (batchMute) batchMute.onclick = async () => {
+            const ids = getSelectedUserIds();
+            if (ids.length === 0) { alert('请先选择用户'); return; }
+            if (confirm(`确定禁言 ${ids.length} 个用户吗？`)) {
+                for (const id of ids) await _supabase.from('public_profiles').update({ is_muted: true }).eq('id', id);
+                alert('操作完成'); renderApp();
+            }
+        };
         const batchUnmute = document.getElementById('batch-unmute');
-        if (batchUnmute) {
-            batchUnmute.onclick = async () => {
-                const ids = getSelectedUserIds();
-                if (ids.length === 0) { alert('请先选择用户'); return; }
-                if (confirm(`确定解除 ${ids.length} 个用户的禁言吗？`)) {
-                    for (const id of ids) {
-                        await _supabase.from('public_profiles').update({ is_muted: false }).eq('id', id);
-                    }
-                    alert('操作完成');
-                    renderApp();
-                }
-            };
-        }
-
-        // 批量删除
+        if (batchUnmute) batchUnmute.onclick = async () => {
+            const ids = getSelectedUserIds();
+            if (ids.length === 0) { alert('请先选择用户'); return; }
+            if (confirm(`确定解除 ${ids.length} 个用户的禁言吗？`)) {
+                for (const id of ids) await _supabase.from('public_profiles').update({ is_muted: false }).eq('id', id);
+                alert('操作完成'); renderApp();
+            }
+        };
         const batchDelete = document.getElementById('batch-delete');
-        if (batchDelete) {
-            batchDelete.onclick = async () => {
-                const ids = getSelectedUserIds();
-                if (ids.length === 0) { alert('请先选择用户'); return; }
-                if (confirm(`永久删除 ${ids.length} 个用户及其所有数据？不可恢复！`)) {
-                    for (const id of ids) {
-                        await _supabase.from('public_profiles').update({ deleted_at: new Date().toISOString() }).eq('id', id);
-                        await _supabase.from('friendships').delete().or(`user_id.eq.${id},friend_id.eq.${id}`);
-                    }
-                    alert('操作完成');
-                    renderApp();
+        if (batchDelete) batchDelete.onclick = async () => {
+            const ids = getSelectedUserIds();
+            if (ids.length === 0) { alert('请先选择用户'); return; }
+            if (confirm(`永久删除 ${ids.length} 个用户及其所有数据？不可恢复！`)) {
+                for (const id of ids) {
+                    await _supabase.from('public_profiles').update({ deleted_at: new Date().toISOString() }).eq('id', id);
+                    await _supabase.from('friendships').delete().or(`user_id.eq.${id},friend_id.eq.${id}`);
                 }
-            };
-        }
+                alert('操作完成'); renderApp();
+            }
+        };
 
-        // 单个操作：设为管理员 / 取消管理员
         document.querySelectorAll('.set-admin').forEach(btn => {
             btn.onclick = async () => {
                 const userId = btn.dataset.id;
                 if (userId === currentUser.id) { alert('不能对自己操作'); return; }
                 await _supabase.from('public_profiles').update({ is_admin: true }).eq('id', userId);
-                alert('已设为管理员');
-                renderApp();
+                alert('已设为管理员'); renderApp();
             };
         });
         document.querySelectorAll('.remove-admin').forEach(btn => {
@@ -1028,12 +1141,9 @@
                 const userId = btn.dataset.id;
                 if (userId === currentUser.id) { alert('不能对自己操作'); return; }
                 await _supabase.from('public_profiles').update({ is_admin: false }).eq('id', userId);
-                alert('已取消管理员');
-                renderApp();
+                alert('已取消管理员'); renderApp();
             };
         });
-
-        // 单个禁言/解除禁言
         document.querySelectorAll('.toggle-mute').forEach(btn => {
             btn.onclick = async () => {
                 const userId = btn.dataset.id;
@@ -1041,12 +1151,9 @@
                 const { data: user } = await _supabase.from('public_profiles').select('is_muted').eq('id', userId).single();
                 const newMuted = !user.is_muted;
                 await _supabase.from('public_profiles').update({ is_muted: newMuted }).eq('id', userId);
-                alert(newMuted ? '已禁言' : '已解除禁言');
-                renderApp();
+                alert(newMuted ? '已禁言' : '已解除禁言'); renderApp();
             };
         });
-
-        // 单个删除
         document.querySelectorAll('.admin-del').forEach(btn => {
             btn.onclick = async () => {
                 const userId = btn.dataset.id;
@@ -1054,17 +1161,13 @@
                 if (!confirm('确定删除该用户？')) return;
                 await _supabase.from('public_profiles').update({ deleted_at: new Date().toISOString() }).eq('id', userId);
                 await _supabase.from('friendships').delete().or(`user_id.eq.${userId},friend_id.eq.${userId}`);
-                alert('用户已删除');
-                renderApp();
+                alert('用户已删除'); renderApp();
             };
         });
-
-        // 创建新用户
         document.getElementById('admin-create-user')?.addEventListener('click', async () => {
             const username = document.getElementById('new-admin-name').value.trim();
             const pwd = document.getElementById('new-admin-pwd').value;
             if (!username || !pwd) { alert('请填写用户名和密码'); return; }
-            // 检查用户名是否存在
             const { data: existing } = await _supabase.from('public_profiles').select('id').eq('display_name', username).maybeSingle();
             if (existing) { alert('用户名已存在'); return; }
             const randomEmail = crypto.randomUUID() + EMAIL_SUFFIX;
@@ -1079,13 +1182,28 @@
                     is_muted: false,
                     bio: ''
                 });
-                alert('用户创建成功');
-                renderApp();
+                alert('用户创建成功'); renderApp();
             }
         });
     }
 
-    // 根路由
+    // 主渲染路由
+    async function renderApp() {
+        if (!currentProfile) {
+            try {
+                currentProfile = await fetchCurrentProfile();
+            } catch (err) {
+                document.getElementById('root').innerHTML = '<div style="text-align:center;padding:40px;">加载失败，请刷新页面</div>';
+                return;
+            }
+        }
+        if (isMobile) {
+            await renderMobile();
+        } else {
+            await renderPc();
+        }
+    }
+
     async function renderRoot() {
         const { data: { session } } = await _supabase.auth.getSession();
         if (session?.user) {
