@@ -260,11 +260,12 @@
         .notification-item:hover {
             background: #f9fafb;
         }
-        /* 聊天布局 */
+        /* 聊天布局 - 修复输入框固定在底部 */
         .chat-layout {
             display: flex;
             height: 100%;
             width: 100%;
+            overflow: hidden;
         }
         .sidebar {
             width: 280px;
@@ -273,6 +274,7 @@
             display: flex;
             flex-direction: column;
             height: 100%;
+            overflow: hidden;
         }
         .sidebar-header {
             padding: 16px 20px;
@@ -333,13 +335,7 @@
         .contact-name {
             font-weight: 500;
         }
-        .last-message {
-            font-size: 12px;
-            color: #8e8e93;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+        /* 右侧聊天区域 - 使用 flex 列，输入框自动贴底 */
         .chat-area {
             flex: 1;
             display: flex;
@@ -587,7 +583,6 @@
 
     // 获取通知列表（未读消息摘要）
     async function getNotifications() {
-        // 获取所有未读消息记录（包括发送者信息）
         const { data: unreads } = await _supabase
             .from('unread_messages')
             .select('from_user_id, count')
@@ -718,7 +713,7 @@
             <div class="notifications">
                 <h4>🔔 通知</h4>
                 ${notifications.map(n => `
-                    <div class="notification-item" data-from-id="${n.from_user_id}">
+                    <div class="notification-item" data-from-id="${n.from_user_id}" data-name="${escapeHtml(n.display_name)}">
                         <span>📩 ${escapeHtml(n.display_name)} 给你发了 ${n.count} 条新消息</span>
                     </div>
                 `).join('')}
@@ -929,8 +924,7 @@
                 if (unreadCounts.get(userId) > 0) {
                     await clearUnreadForUser(userId);
                     await loadUnreadCounts();
-                    // 刷新好友列表以更新红点
-                    await loadContactsAndChat();
+                    await loadContactsAndChat(); // 刷新好友列表以更新红点
                 }
                 await loadMessagesAndRenderChat();
                 document.querySelectorAll('.contact-item').forEach(c => c.classList.remove('active'));
@@ -1029,12 +1023,13 @@
 
     // 电脑版渲染（含用户下拉菜单）
     async function renderPc() {
+        // 顶部导航只显示三个主菜单
         const navItems = [
             { id: 'home', label: '主页' },
             { id: 'chat', label: '聊天' },
             { id: 'friends', label: '好友' }
         ];
-        // 不再在顶部显示“我的主页”、“设置”、“管理”，而是放入下拉菜单
+        // 下拉菜单项目
         const dropdownItems = [
             { id: 'profile', label: '😀 我的主页' },
             { id: 'settings', label: '⚙️ 设置' }
@@ -1080,18 +1075,14 @@
         const menu = document.getElementById('dropdown-menu');
         if (trigger && menu) {
             const toggleMenu = (show) => {
-                if (show) {
-                    menu.classList.add('show');
-                } else {
-                    menu.classList.remove('show');
-                }
+                if (show) menu.classList.add('show');
+                else menu.classList.remove('show');
             };
             trigger.addEventListener('click', (e) => {
                 e.stopPropagation();
                 toggleMenu(!menu.classList.contains('show'));
             });
             document.addEventListener('click', () => toggleMenu(false));
-            // 菜单项点击
             document.querySelectorAll('.dropdown-item[data-view]').forEach(el => {
                 el.addEventListener('click', () => {
                     currentView = el.dataset.view;
@@ -1110,7 +1101,7 @@
             };
         }
 
-        // 顶部导航（主页、聊天、好友）
+        // 顶部导航事件
         document.querySelectorAll('.pc-nav-item').forEach(el => {
             el.addEventListener('click', () => {
                 currentView = el.dataset.view;
@@ -1128,14 +1119,13 @@
         else if (currentView === 'admin' && currentProfile.is_admin) attachAdminEvents();
     }
 
-    // 手机版渲染（底部导航，用户菜单改为顶部右上角下拉）
+    // 手机版渲染（底部导航，用户菜单放到顶部右侧）
     async function renderMobile() {
         const bottomNavItems = [
             { id: 'home', icon: '🏠', label: '主页' },
             { id: 'chat', icon: '💬', label: '聊天' },
             { id: 'friends', icon: '👥', label: '好友' }
         ];
-        // 手机版也将个人页面放入下拉菜单（点击头像）
         const dropdownItems = [
             { id: 'profile', label: '我的主页' },
             { id: 'settings', label: '设置' }
@@ -1423,10 +1413,10 @@
             document.querySelectorAll('.notification-item').forEach(el => {
                 el.addEventListener('click', () => {
                     const fromId = el.dataset.fromId;
+                    const name = el.dataset.name;
                     if (fromId) {
-                        // 跳转到聊天并定位到该好友
                         currentView = 'chat';
-                        currentChatUser = { id: fromId, display_name: el.innerText.split(' ')[0] }; // 简化获取名称
+                        currentChatUser = { id: fromId, display_name: name };
                         renderApp();
                     }
                 });
