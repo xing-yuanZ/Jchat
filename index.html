@@ -33,6 +33,11 @@
             padding: 32px;
             width: 340px;
             box-shadow: 0 20px 35px -10px rgba(0,0,0,0.2);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .auth-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 25px 40px -12px rgba(0,0,0,0.25);
         }
         .auth-card h2 {
             text-align: center;
@@ -44,6 +49,12 @@
             margin-bottom: 16px;
             border: 1px solid #ddd;
             border-radius: 30px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .auth-card input:focus {
+            border-color: #007aff;
+            box-shadow: 0 0 0 2px rgba(0,122,255,0.2);
+            outline: none;
         }
         .auth-card button {
             width: 100%;
@@ -54,12 +65,21 @@
             border-radius: 30px;
             cursor: pointer;
             font-weight: bold;
+            transition: transform 0.2s, background 0.2s;
+        }
+        .auth-card button:hover {
+            background: #005fc1;
+            transform: scale(1.02);
         }
         .auth-switch {
             text-align: center;
             margin-top: 16px;
             color: #007aff;
             cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .auth-switch:hover {
+            opacity: 0.8;
         }
         .error-msg {
             color: #e53e3e;
@@ -99,11 +119,12 @@
             padding: 8px 16px;
             cursor: pointer;
             border-radius: 20px;
-            transition: background 0.2s;
+            transition: all 0.2s ease;
             font-size: 14px;
         }
         .pc-nav-item:hover {
             background: #eef2ff;
+            transform: translateY(-1px);
         }
         .pc-nav-item.active {
             background: #e0e7ff;
@@ -123,9 +144,11 @@
             padding: 6px 12px;
             border-radius: 30px;
             background: #f0f2f5;
+            transition: background 0.2s, transform 0.1s;
         }
         .user-trigger:hover {
             background: #e4e6e9;
+            transform: scale(1.02);
         }
         .dropdown-menu {
             position: absolute;
@@ -182,11 +205,16 @@
             font-size: 14px;
             color: #ef4444;
             cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .mobile-header .logout-mobile:hover {
+            opacity: 0.7;
         }
         .mobile-content {
             flex: 1;
             overflow-y: auto;
             padding-bottom: 70px;
+            animation: fadeIn 0.3s ease;
         }
         .bottom-nav {
             position: fixed;
@@ -210,6 +238,11 @@
             cursor: pointer;
             padding: 4px 8px;
             border-radius: 30px;
+            transition: all 0.2s ease;
+        }
+        .bottom-nav-item:hover {
+            background: rgba(0,122,255,0.08);
+            transform: translateY(-2px);
         }
         .bottom-nav-item.active {
             color: #007aff;
@@ -218,19 +251,36 @@
         .bottom-icon {
             font-size: 22px;
         }
-        /* 公用内容样式 - 关键修复 */
+        /* 公共内容区域动画 */
         .pc-content {
             flex: 1;
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            animation: fadeIn 0.3s ease;
         }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        /* 卡片样式与动画 */
         .main-content-card {
             background: white;
             border-radius: 16px;
             padding: 20px;
             margin: 16px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .main-content-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
         }
         /* 主页公告板放大 */
         .announcement-large {
@@ -239,6 +289,11 @@
             padding: 32px 40px;
             text-align: center;
             margin-bottom: 24px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .announcement-large:hover {
+            transform: scale(1.01);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
         }
         .announcement-large .icon {
             font-size: 48px;
@@ -262,11 +317,13 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            transition: background 0.2s, transform 0.1s;
         }
         .notification-item:hover {
             background: #f9fafb;
+            transform: translateX(4px);
         }
-        /* 聊天布局 - 确保输入框在底部 */
+        /* 聊天布局 */
         .chat-layout {
             flex: 1;
             display: flex;
@@ -302,9 +359,11 @@
             cursor: pointer;
             border-bottom: 1px solid #f0f0f0;
             position: relative;
+            transition: background 0.2s, transform 0.1s;
         }
         .contact-item:hover {
             background: #eef2ff;
+            transform: translateX(2px);
         }
         .contact-item.active {
             background: #e0e7ff;
@@ -342,7 +401,7 @@
         .contact-name {
             font-weight: 500;
         }
-        /* 右侧聊天区域 - 高度自动填满，输入框在底部 */
+        /* 右侧聊天区域 */
         .chat-area {
             flex: 1;
             display: flex;
@@ -373,6 +432,10 @@
             border-radius: 18px;
             font-size: 14px;
             word-wrap: break-word;
+            transition: transform 0.1s;
+        }
+        .message:hover {
+            transform: scale(1.01);
         }
         .message.sent {
             align-self: flex-end;
@@ -397,6 +460,11 @@
             border: 1px solid #ddd;
             border-radius: 30px;
             outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        #chat-input:focus {
+            border-color: #007aff;
+            box-shadow: 0 0 0 2px rgba(0,122,255,0.2);
         }
         #chat-send {
             background: #007aff;
@@ -405,6 +473,11 @@
             border-radius: 30px;
             color: white;
             cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+        }
+        #chat-send:hover {
+            background: #005fc1;
+            transform: scale(1.03);
         }
         /* 其他样式 */
         .friend-item {
@@ -437,9 +510,17 @@
             border-radius: 8px;
             color: white;
             cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+        }
+        button:hover {
+            background: #005fc1;
+            transform: scale(1.02);
         }
         .danger-btn {
             background: #ef4444;
+        }
+        .danger-btn:hover {
+            background: #dc2626;
         }
         input, textarea {
             width: 100%;
@@ -447,6 +528,12 @@
             border: 1px solid #ddd;
             border-radius: 8px;
             margin-bottom: 12px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input:focus, textarea:focus {
+            border-color: #007aff;
+            box-shadow: 0 0 0 2px rgba(0,122,255,0.2);
+            outline: none;
         }
         .table-wrapper {
             max-height: 400px;
@@ -852,7 +939,6 @@
         `;
     }
 
-    // 加载好友列表，并按最后消息时间排序 + 显示未读红点
     async function loadContactsAndChat() {
         const { data: friendships } = await _supabase
             .from('friendships')
@@ -876,7 +962,6 @@
             .is('deleted_at', null);
         if (!friends) return;
 
-        // 获取每条对话的最后一条消息时间
         const lastMessages = await Promise.all(friends.map(async (f) => {
             const { data } = await _supabase
                 .from('messages')
@@ -1018,7 +1103,7 @@
             .subscribe();
     }
 
-    // 电脑版渲染（含用户下拉菜单）
+    // 电脑版渲染
     async function renderPc() {
         const navItems = [
             { id: 'home', label: '主页' },
@@ -1113,7 +1198,7 @@
         else if (currentView === 'admin' && currentProfile.is_admin) attachAdminEvents();
     }
 
-    // 手机版渲染（底部导航）
+    // 手机版渲染
     async function renderMobile() {
         const bottomNavItems = [
             { id: 'home', icon: '🏠', label: '主页' },
@@ -1385,7 +1470,6 @@
         });
     }
 
-    // 主路由
     async function renderApp() {
         if (!currentProfile) {
             try {
