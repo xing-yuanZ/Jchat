@@ -6,7 +6,7 @@
     <title>JChat - 即时通讯</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* ========== 主题变量 ========== */
+        /* ========== 主题变量（完整，同之前版本） ========== */
         :root {
             --bg-body: #f5f7fb;
             --bg-card: white;
@@ -140,523 +140,90 @@
             --table-header-bg: #e8e8e8;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        html, body, #root {
-            height: 100%;
-            overflow: hidden;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: var(--bg-body);
-            color: var(--text-primary);
-            transition: background 0.2s, color 0.2s;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body, #root { height: 100%; overflow: hidden; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg-body); color: var(--text-primary); transition: background 0.2s, color 0.2s; }
         /* 登录页 */
-        .auth-page {
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-        }
-        .auth-card {
-            background: white;
-            border-radius: 20px;
-            padding: 32px;
-            width: 340px;
-            box-shadow: 0 20px 35px -10px rgba(0,0,0,0.2);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .auth-card h2 {
-            text-align: center;
-            margin-bottom: 24px;
-        }
-        .auth-card input {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 16px;
-            border: 1px solid var(--input-border);
-            border-radius: 30px;
-            background: var(--bg-card);
-            color: var(--text-primary);
-        }
-        .auth-card input:focus {
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 2px rgba(0,122,255,0.2);
-            outline: none;
-        }
-        .auth-card button {
-            width: 100%;
-            padding: 12px;
-            background: var(--accent-color);
-            color: white;
-            border: none;
-            border-radius: 30px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: transform 0.2s, background 0.2s;
-        }
-        .auth-card button:hover:not(:disabled) {
-            background: var(--accent-hover);
-            transform: scale(1.02);
-        }
-        .auth-card button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-        .auth-switch {
-            text-align: center;
-            margin-top: 16px;
-            color: var(--accent-color);
-            cursor: pointer;
-        }
-        .error-msg {
-            color: var(--danger-color);
-            margin-bottom: 12px;
-            text-align: center;
-        }
+        .auth-page { height: 100%; display: flex; justify-content: center; align-items: center; background: linear-gradient(135deg, #667eea, #764ba2); }
+        .auth-card { background: white; border-radius: 20px; padding: 32px; width: 340px; box-shadow: 0 20px 35px -10px rgba(0,0,0,0.2); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .auth-card h2 { text-align: center; margin-bottom: 24px; }
+        .auth-card input { width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid var(--input-border); border-radius: 30px; background: var(--bg-card); color: var(--text-primary); }
+        .auth-card input:focus { border-color: var(--accent-color); box-shadow: 0 0 0 2px rgba(0,122,255,0.2); outline: none; }
+        .auth-card button { width: 100%; padding: 12px; background: var(--accent-color); color: white; border: none; border-radius: 30px; cursor: pointer; font-weight: bold; transition: transform 0.2s, background 0.2s; }
+        .auth-card button:hover:not(:disabled) { background: var(--accent-hover); transform: scale(1.02); }
+        .auth-card button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .auth-switch { text-align: center; margin-top: 16px; color: var(--accent-color); cursor: pointer; }
+        .error-msg { color: var(--danger-color); margin-bottom: 12px; text-align: center; }
         /* 电脑版 */
-        .pc-app {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-        .pc-top-bar {
-            background: var(--bg-card);
-            border-bottom: 1px solid var(--border-color);
-            padding: 0 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: 60px;
-            flex-shrink: 0;
-        }
-        .logo {
-            font-size: 20px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            background-clip: text;
-            -webkit-background-clip: text;
-            color: transparent;
-        }
-        .pc-nav {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-        .pc-nav-item {
-            padding: 8px 16px;
-            cursor: pointer;
-            border-radius: 20px;
-            transition: all 0.2s ease;
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-        .pc-nav-item:hover {
-            background: var(--sidebar-item-hover);
-            transform: translateY(-1px);
-        }
-        .pc-nav-item.active {
-            background: var(--sidebar-item-active);
-            color: var(--accent-color);
-            font-weight: 500;
-        }
-        .user-dropdown {
-            position: relative;
-            display: inline-block;
-        }
-        .user-trigger {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            padding: 6px 12px;
-            border-radius: 30px;
-            background: var(--sidebar-bg);
-            transition: background 0.2s, transform 0.1s;
-        }
-        .user-trigger:hover {
-            background: var(--sidebar-item-hover);
-            transform: scale(1.02);
-        }
-        .dropdown-menu {
-            position: absolute;
-            right: 0;
-            top: 45px;
-            background: var(--dropdown-bg);
-            border-radius: 16px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-            min-width: 160px;
-            z-index: 200;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px);
-            transition: opacity 0.2s, visibility 0.2s, transform 0.2s;
-        }
-        .dropdown-menu.show {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-        .dropdown-item {
-            padding: 12px 20px;
-            cursor: pointer;
-            transition: background 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: var(--text-primary);
-        }
-        .dropdown-item:hover {
-            background: var(--sidebar-item-hover);
-        }
+        .pc-app { display: flex; flex-direction: column; height: 100%; }
+        .pc-top-bar { background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 60px; flex-shrink: 0; }
+        .logo { font-size: 20px; font-weight: 700; background: linear-gradient(135deg, #667eea, #764ba2); background-clip: text; -webkit-background-clip: text; color: transparent; }
+        .pc-nav { display: flex; gap: 12px; align-items: center; }
+        .pc-nav-item { padding: 8px 16px; cursor: pointer; border-radius: 20px; transition: all 0.2s ease; font-size: 14px; color: var(--text-secondary); }
+        .pc-nav-item:hover { background: var(--sidebar-item-hover); transform: translateY(-1px); }
+        .pc-nav-item.active { background: var(--sidebar-item-active); color: var(--accent-color); font-weight: 500; }
+        .user-dropdown { position: relative; display: inline-block; }
+        .user-trigger { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px 12px; border-radius: 30px; background: var(--sidebar-bg); transition: background 0.2s, transform 0.1s; }
+        .user-trigger:hover { background: var(--sidebar-item-hover); transform: scale(1.02); }
+        .dropdown-menu { position: absolute; right: 0; top: 45px; background: var(--dropdown-bg); border-radius: 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); min-width: 160px; z-index: 200; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: opacity 0.2s, visibility 0.2s, transform 0.2s; }
+        .dropdown-menu.show { opacity: 1; visibility: visible; transform: translateY(0); }
+        .dropdown-item { padding: 12px 20px; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 12px; color: var(--text-primary); }
+        .dropdown-item:hover { background: var(--sidebar-item-hover); }
         /* 手机版 */
-        .mobile-app {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-        .mobile-header {
-            background: var(--bg-card);
-            border-bottom: 1px solid var(--border-color);
-            padding: 12px 20px;
-            font-size: 18px;
-            font-weight: 600;
-            text-align: center;
-            position: relative;
-            flex-shrink: 0;
-            color: var(--text-primary);
-        }
-        .mobile-header .logout-mobile {
-            position: absolute;
-            right: 16px;
-            top: 12px;
-            background: none;
-            border: none;
-            font-size: 14px;
-            color: var(--danger-color);
-            cursor: pointer;
-        }
-        .mobile-content {
-            flex: 1;
-            overflow-y: auto;
-            padding-bottom: 70px;
-            animation: fadeIn 0.3s ease;
-        }
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--bg-card);
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-around;
-            padding: 8px 12px 12px;
-            z-index: 100;
-        }
-        .bottom-nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            font-size: 12px;
-            color: var(--text-secondary);
-            cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 30px;
-            transition: all 0.2s ease;
-        }
-        .bottom-nav-item.active {
-            color: var(--accent-color);
-            background: rgba(0,122,255,0.08);
-        }
-        .bottom-icon {
-            font-size: 22px;
-        }
-        .pc-content {
-            flex: 1;
-            overflow-y: auto;
-            animation: fadeIn 0.3s ease;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        /* 卡片 */
-        .main-content-card {
-            background: var(--bg-card);
-            border-radius: 16px;
-            padding: 20px;
-            margin: 16px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .announcement-large {
-            background: var(--announcement-bg);
-            border-radius: 32px;
-            padding: 32px 40px;
-            text-align: center;
-            margin-bottom: 24px;
-        }
+        .mobile-app { display: flex; flex-direction: column; height: 100%; }
+        .mobile-header { background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 12px 20px; font-size: 18px; font-weight: 600; text-align: center; position: relative; flex-shrink: 0; color: var(--text-primary); }
+        .mobile-header .logout-mobile { position: absolute; right: 16px; top: 12px; background: none; border: none; font-size: 14px; color: var(--danger-color); cursor: pointer; }
+        .mobile-content { flex: 1; overflow-y: auto; padding-bottom: 70px; animation: fadeIn 0.3s ease; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-card); border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; padding: 8px 12px 12px; z-index: 100; }
+        .bottom-nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; color: var(--text-secondary); cursor: pointer; padding: 4px 8px; border-radius: 30px; transition: all 0.2s ease; }
+        .bottom-nav-item.active { color: var(--accent-color); background: rgba(0,122,255,0.08); }
+        .bottom-icon { font-size: 22px; }
+        .pc-content { flex: 1; overflow-y: auto; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .main-content-card { background: var(--bg-card); border-radius: 16px; padding: 20px; margin: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: transform 0.2s, box-shadow 0.2s; }
+        .announcement-large { background: var(--announcement-bg); border-radius: 32px; padding: 32px 40px; text-align: center; margin-bottom: 24px; }
         .announcement-large .icon { font-size: 48px; margin-bottom: 16px; }
         .announcement-large .text { font-size: 1.4rem; font-weight: 500; }
-        .notifications {
-            background: var(--bg-card);
-            border-radius: 20px;
-            padding: 16px;
-            margin-bottom: 24px;
-        }
-        .notification-item {
-            padding: 12px;
-            border-bottom: 1px solid var(--border-color);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            transition: background 0.2s;
-        }
+        .notifications { background: var(--bg-card); border-radius: 20px; padding: 16px; margin-bottom: 24px; }
+        .notification-item { padding: 12px; border-bottom: 1px solid var(--border-color); cursor: pointer; display: flex; align-items: center; gap: 12px; transition: background 0.2s; }
         .notification-item:hover { background: var(--sidebar-item-hover); }
         /* 聊天 */
-        .chat-layout {
-            display: flex;
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-        }
-        .sidebar {
-            width: 280px;
-            background: var(--sidebar-bg);
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            overflow: hidden;
-        }
-        .sidebar-header {
-            padding: 16px 20px;
-            background: var(--bg-card);
-            border-bottom: 1px solid var(--border-color);
-            font-weight: 600;
-            flex-shrink: 0;
-        }
+        .chat-layout { display: flex; height: 100%; width: 100%; overflow: hidden; }
+        .sidebar { width: 280px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+        .sidebar-header { padding: 16px 20px; background: var(--bg-card); border-bottom: 1px solid var(--border-color); font-weight: 600; flex-shrink: 0; }
         .contact-list { flex: 1; overflow-y: auto; }
-        .contact-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 20px;
-            cursor: pointer;
-            border-bottom: 1px solid var(--border-color);
-            position: relative;
-            transition: background 0.2s;
-        }
+        .contact-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; cursor: pointer; border-bottom: 1px solid var(--border-color); position: relative; transition: background 0.2s; }
         .contact-item:hover { background: var(--sidebar-item-hover); }
         .contact-item.active { background: var(--sidebar-item-active); }
-        .avatar-circle {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: var(--accent-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            position: relative;
-        }
-        .unread-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: #ff3b30;
-            color: white;
-            border-radius: 50%;
-            min-width: 18px;
-            height: 18px;
-            font-size: 11px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0 4px;
-        }
-        .chat-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: var(--bg-card);
-            height: 100%;
-            overflow: hidden;
-        }
-        .chat-header {
-            padding: 16px 24px;
-            background: var(--bg-card);
-            border-bottom: 1px solid var(--border-color);
-            font-weight: 600;
-            font-size: 18px;
-            flex-shrink: 0;
-        }
-        .messages-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .message {
-            max-width: 70%;
-            padding: 8px 14px;
-            border-radius: 18px;
-            font-size: 14px;
-            word-wrap: break-word;
-        }
-        .message.sent {
-            align-self: flex-end;
-            background: var(--message-sent-bg);
-            color: var(--message-sent-text);
-        }
-        .message.received {
-            align-self: flex-start;
-            background: var(--message-received-bg);
-            color: var(--message-received-text);
-        }
-        .input-area {
-            padding: 16px 24px;
-            background: var(--bg-card);
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            gap: 12px;
-            flex-shrink: 0;
-        }
-        #chat-input {
-            flex: 1;
-            padding: 10px 16px;
-            border: 1px solid var(--input-border);
-            border-radius: 30px;
-            background: var(--bg-card);
-            color: var(--text-primary);
-        }
-        #chat-send {
-            background: var(--accent-color);
-            border: none;
-            padding: 8px 20px;
-            border-radius: 30px;
-            color: white;
-            cursor: pointer;
-        }
-        .card-with-scroll {
-            display: flex;
-            flex-direction: column;
-            max-height: calc(100vh - 180px);
-            overflow: hidden;
-        }
-        .table-wrapper {
-            flex: 1;
-            overflow-y: auto;
-            margin-top: 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            min-height: 200px;
-        }
-        .friend-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-        .profile-header {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-        }
-        .profile-avatar-lg {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: var(--accent-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 32px;
-            font-weight: bold;
-        }
-        button {
-            background: var(--accent-color);
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            color: white;
-            cursor: pointer;
-            transition: transform 0.2s, background 0.2s;
-        }
-        button:hover:not(:disabled) {
-            background: var(--accent-hover);
-            transform: scale(1.02);
-        }
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-        .danger-btn {
-            background: var(--danger-color);
-        }
-        input, textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid var(--input-border);
-            border-radius: 8px;
-            margin-bottom: 12px;
-            background: var(--bg-card);
-            color: var(--text-primary);
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
-        }
-        th {
-            background: var(--table-header-bg);
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-        .batch-bar {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-bottom: 16px;
-            align-items: center;
-        }
-        .checkbox-col {
-            width: 30px;
-            text-align: center;
-        }
-        .theme-selector {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        .theme-btn {
-            background: var(--sidebar-bg);
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
-        }
-        .theme-btn.active-theme {
-            background: var(--accent-color);
-            color: white;
-            border-color: var(--accent-color);
-        }
+        .avatar-circle { width: 40px; height: 40px; border-radius: 50%; background: var(--accent-color); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; position: relative; }
+        .unread-badge { position: absolute; top: -5px; right: -5px; background: #ff3b30; color: white; border-radius: 50%; min-width: 18px; height: 18px; font-size: 11px; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
+        .chat-area { flex: 1; display: flex; flex-direction: column; background: var(--bg-card); height: 100%; overflow: hidden; }
+        .chat-header { padding: 16px 24px; background: var(--bg-card); border-bottom: 1px solid var(--border-color); font-weight: 600; font-size: 18px; flex-shrink: 0; }
+        .messages-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+        .message { max-width: 70%; padding: 8px 14px; border-radius: 18px; font-size: 14px; word-wrap: break-word; }
+        .message.sent { align-self: flex-end; background: var(--message-sent-bg); color: var(--message-sent-text); }
+        .message.received { align-self: flex-start; background: var(--message-received-bg); color: var(--message-received-text); }
+        .input-area { padding: 16px 24px; background: var(--bg-card); border-top: 1px solid var(--border-color); display: flex; gap: 12px; flex-shrink: 0; }
+        #chat-input { flex: 1; padding: 10px 16px; border: 1px solid var(--input-border); border-radius: 30px; background: var(--bg-card); color: var(--text-primary); }
+        #chat-send { background: var(--accent-color); border: none; padding: 8px 20px; border-radius: 30px; color: white; cursor: pointer; }
+        .card-with-scroll { display: flex; flex-direction: column; max-height: calc(100vh - 180px); overflow: hidden; }
+        .table-wrapper { flex: 1; overflow-y: auto; margin-top: 12px; border: 1px solid var(--border-color); border-radius: 12px; min-height: 200px; }
+        .friend-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .profile-header { display: flex; gap: 20px; align-items: center; }
+        .profile-avatar-lg { width: 80px; height: 80px; border-radius: 50%; background: var(--accent-color); display: flex; align-items: center; justify-content: center; color: white; font-size: 32px; font-weight: bold; }
+        button { background: var(--accent-color); border: none; padding: 8px 16px; border-radius: 8px; color: white; cursor: pointer; transition: transform 0.2s, background 0.2s; }
+        button:hover:not(:disabled) { background: var(--accent-hover); transform: scale(1.02); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .danger-btn { background: var(--danger-color); }
+        input, textarea { width: 100%; padding: 10px; border: 1px solid var(--input-border); border-radius: 8px; margin-bottom: 12px; background: var(--bg-card); color: var(--text-primary); }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { background: var(--table-header-bg); position: sticky; top: 0; z-index: 10; }
+        .batch-bar { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+        .checkbox-col { width: 30px; text-align: center; }
+        .theme-selector { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .theme-btn { background: var(--sidebar-bg); color: var(--text-primary); border: 1px solid var(--border-color); }
+        .theme-btn.active-theme { background: var(--accent-color); color: white; border-color: var(--accent-color); }
         @media (max-width: 768px) {
             .chat-layout { flex-direction: column; }
             .sidebar { width: 100%; max-height: 200px; border-right: none; border-bottom: 1px solid var(--border-color); }
@@ -685,7 +252,6 @@
     let isMobile = window.innerWidth <= 768;
     let unreadCounts = new Map();
 
-    // 主题管理
     let currentTheme = localStorage.getItem('jchat_theme') || 'light';
     function applyTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);
@@ -710,7 +276,6 @@
         return name ? name.charAt(0).toUpperCase() : '?';
     }
 
-    // 数据库操作
     async function loadUnreadCounts() {
         const { data, error } = await _supabase
             .from('unread_messages')
@@ -814,7 +379,6 @@
             const originalText = submit.innerText;
             submit.disabled = true;
             submit.innerText = authIsLogin ? '登录中...' : '注册中...';
-
             const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('请求超时，请检查网络')), 15000));
 
             try {
@@ -836,10 +400,12 @@
                     await loadUnreadCounts();
                     renderApp();
                 } else {
+                    // 检查用户名是否已存在（排除软删除的用户）
                     const checkExist = _supabase
                         .from('public_profiles')
                         .select('id')
                         .eq('display_name', username)
+                        .is('deleted_at', null)
                         .maybeSingle();
                     const { data: existing } = await Promise.race([checkExist, timeout]);
                     if (existing) throw new Error('用户名已被占用');
@@ -899,9 +465,7 @@
         `;
     }
 
-    // ========== 好友页面 (修复搜索和申请) ==========
     async function renderFriends() {
-        // 待处理的好友请求（别人发给我的）
         const { data: requests } = await _supabase
             .from('friendships')
             .select('id, user_id')
@@ -926,7 +490,6 @@
             `;
         }).join('');
 
-        // 已经是好友的用户
         const { data: friendships } = await _supabase
             .from('friendships')
             .select('user_id, friend_id')
@@ -956,107 +519,55 @@
     }
 
     function attachFriendEvents() {
-        // 接受好友请求
         document.querySelectorAll('.accept-friend').forEach(btn => {
             btn.onclick = async () => {
                 const requestId = btn.closest('.friend-item').dataset.requestId;
-                const { error } = await _supabase
-                    .from('friendships')
-                    .update({ status: 'accepted' })
-                    .eq('id', requestId);
-                if (error) {
-                    alert('接受失败: ' + error.message);
-                } else {
-                    alert('已添加好友');
-                    renderApp();
-                }
+                await _supabase.from('friendships').update({ status: 'accepted' }).eq('id', requestId);
+                renderApp();
             };
         });
-
-        // 拒绝好友请求
         document.querySelectorAll('.reject-friend').forEach(btn => {
             btn.onclick = async () => {
                 const requestId = btn.closest('.friend-item').dataset.requestId;
-                const { error } = await _supabase
-                    .from('friendships')
-                    .delete()
-                    .eq('id', requestId);
-                if (error) {
-                    alert('拒绝失败: ' + error.message);
-                } else {
-                    renderApp();
-                }
+                await _supabase.from('friendships').delete().eq('id', requestId);
+                renderApp();
             };
         });
-
-        // 搜索并添加好友（大小写不敏感 + 去空格 + 调试日志）
         const searchBtn = document.getElementById('search-add');
         if (searchBtn) {
             searchBtn.onclick = async () => {
-                let rawUsername = document.getElementById('add-friend-name').value.trim();
+                const rawUsername = document.getElementById('add-friend-name').value.trim();
                 if (!rawUsername) return;
-
-                console.log('搜索用户名:', rawUsername);
-
-                // 使用 ilike 进行大小写不敏感搜索，同时排除自己且未被删除
                 const { data: users, error } = await _supabase
                     .from('public_profiles')
                     .select('id, display_name')
                     .ilike('display_name', rawUsername)
                     .is('deleted_at', null)
                     .limit(1);
-                if (error) {
-                    console.error('搜索错误:', error);
-                    alert('搜索出错: ' + error.message);
-                    return;
-                }
-                console.log('搜索结果:', users);
-                if (!users || users.length === 0) {
-                    alert('用户不存在，请确认用户名是否正确');
-                    return;
-                }
+                if (error) { alert('搜索出错: ' + error.message); return; }
+                if (!users || users.length === 0) { alert('用户不存在'); return; }
                 const targetUser = users[0];
-                if (targetUser.id === currentUser.id) {
-                    alert('不能添加自己');
-                    return;
-                }
-
-                // 检查是否已经是好友或已有待处理请求
-                const { data: existing, error: checkErr } = await _supabase
+                if (targetUser.id === currentUser.id) { alert('不能添加自己'); return; }
+                const { data: existing } = await _supabase
                     .from('friendships')
                     .select('status')
                     .or(`and(user_id.eq.${currentUser.id},friend_id.eq.${targetUser.id}),and(user_id.eq.${targetUser.id},friend_id.eq.${currentUser.id})`)
                     .maybeSingle();
-                if (checkErr) {
-                    console.error('检查好友关系错误:', checkErr);
-                }
                 if (existing) {
                     if (existing.status === 'accepted') alert('已经是好友');
                     else if (existing.status === 'pending') alert('已发送过好友请求，请等待对方处理');
                     else alert('无法添加好友');
                     return;
                 }
-
-                // 发送好友申请
                 const { error: insertErr } = await _supabase
                     .from('friendships')
-                    .insert({
-                        user_id: currentUser.id,
-                        friend_id: targetUser.id,
-                        status: 'pending'
-                    });
-                if (insertErr) {
-                    console.error('发送申请错误:', insertErr);
-                    alert('发送失败: ' + insertErr.message);
-                } else {
-                    alert('好友申请已发送');
-                    renderApp();
-                }
+                    .insert({ user_id: currentUser.id, friend_id: targetUser.id, status: 'pending' });
+                if (insertErr) alert('发送失败: ' + insertErr.message);
+                else { alert('好友申请已发送'); renderApp(); }
             };
         }
     }
 
-    // ========== 我的主页 ==========
     async function renderMyProfile() {
         return `
             <div class="main-content-card">
@@ -1074,7 +585,6 @@
         `;
     }
 
-    // ========== 设置页面 ==========
     function renderSettings() {
         const themes = [
             { id: 'light', name: '浅色', icon: '☀️' },
@@ -1097,7 +607,6 @@
         `;
     }
 
-    // ========== 管理面板 ==========
     async function renderAdmin() {
         const { data: users } = await _supabase.from('public_profiles').select('*').is('deleted_at', null);
         const { data: ann } = await _supabase.from('announcements').select('content').order('created_at', { ascending: false }).limit(1);
@@ -1146,7 +655,6 @@
         `;
     }
 
-    // ========== 聊天视图 ==========
     function renderChatView() {
         return `
             <div class="chat-layout">
@@ -1280,11 +788,7 @@
                 const content = input.value.trim();
                 if (!content || !currentChatUser) return;
                 if (currentProfile.is_muted) { alert('你已被禁言'); return; }
-                await _supabase.from('messages').insert({
-                    from_user_id: currentUser.id,
-                    to_user_id: currentChatUser.id,
-                    content
-                });
+                await _supabase.from('messages').insert({ from_user_id: currentUser.id, to_user_id: currentChatUser.id, content });
                 input.value = '';
                 const container = document.getElementById('messages-container');
                 if (container) {
@@ -1325,7 +829,6 @@
             .subscribe();
     }
 
-    // ========== 电脑版 ==========
     async function renderPc() {
         const navItems = [
             { id: 'home', label: '主页' },
@@ -1368,7 +871,6 @@
         const fullHtml = `<div class="pc-app">${topBar}<div class="pc-content">${contentHtml}</div></div>`;
         document.getElementById('root').innerHTML = fullHtml;
 
-        // 主题按钮
         document.querySelectorAll('.theme-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 applyTheme(btn.dataset.theme);
@@ -1423,7 +925,6 @@
         else if (currentView === 'admin' && currentProfile.is_admin) attachAdminEvents();
     }
 
-    // ========== 手机版 ==========
     async function renderMobile() {
         const bottomNavItems = [
             { id: 'home', icon: '🏠', label: '主页' },
@@ -1527,7 +1028,6 @@
         else if (currentView === 'admin' && currentProfile.is_admin) attachAdminEvents();
     }
 
-    // ========== 事件绑定（设置、管理） ==========
     function attachSettingsEvents() {
         document.getElementById('update-name')?.addEventListener('click', async () => {
             const newName = document.getElementById('new-name').value.trim();
@@ -1656,15 +1156,28 @@
         document.getElementById('admin-create-user')?.addEventListener('click', async () => {
             const username = document.getElementById('new-admin-name').value.trim();
             const pwd = document.getElementById('new-admin-pwd').value;
-            if (!username || !pwd) return alert('请填写');
-            const { data: existing } = await _supabase.from('public_profiles').select('id').eq('display_name', username).maybeSingle();
+            if (!username || !pwd) return alert('请填写用户名和密码');
+            // 检查用户名是否已存在（排除软删除的用户）
+            const { data: existing } = await _supabase
+                .from('public_profiles')
+                .select('id')
+                .eq('display_name', username)
+                .is('deleted_at', null)
+                .maybeSingle();
             if (existing) return alert('用户名已存在');
             const randomEmail = crypto.randomUUID() + EMAIL_SUFFIX;
             const { data, error } = await _supabase.auth.signUp({ email: randomEmail, password: pwd });
-            if (error) return alert(error.message);
+            if (error) return alert('创建失败: ' + error.message);
             if (data.user) {
-                await _supabase.from('public_profiles').insert({ id: data.user.id, email: randomEmail, display_name: username, is_admin: false, is_muted: false, bio: '' });
-                alert('创建成功');
+                await _supabase.from('public_profiles').insert({
+                    id: data.user.id,
+                    email: randomEmail,
+                    display_name: username,
+                    is_admin: false,
+                    is_muted: false,
+                    bio: ''
+                });
+                alert('用户创建成功');
                 renderApp();
             }
         });
