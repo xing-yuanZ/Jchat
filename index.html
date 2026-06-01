@@ -669,9 +669,11 @@
 <div id="root"></div>
 
 <script>
-    // Supabase 配置
+    // ==================== Supabase 配置 ====================
     const SUPABASE_URL = 'https://cxilodvbdhtxtrldoswl.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_36lHK24HL6drOmuhSTTv8g_w2n0fU5H';
+    // =======================================================
+
     const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const EMAIL_SUFFIX = '@jchat.local';
 
@@ -683,7 +685,7 @@
     let isMobile = window.innerWidth <= 768;
     let unreadCounts = new Map();
 
-    // 主题
+    // 主题管理
     let currentTheme = localStorage.getItem('jchat_theme') || 'light';
     function applyTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);
@@ -897,31 +899,55 @@
         `;
     }
 
+    // ========== 修复后的好友页面 ==========
     async function renderFriends() {
-        const { data: requests } = await _supabase.from('friendships').select('id, user_id').eq('friend_id', currentUser.id).eq('status', 'pending');
+        // 待处理的好友请求（别人发给我的）
+        const { data: requests } = await _supabase
+            .from('friendships')
+            .select('id, user_id')
+            .eq('friend_id', currentUser.id)
+            .eq('status', 'pending');
         let requestUsers = [];
         if (requests?.length) {
-            const { data } = await _supabase.from('public_profiles').select('id, display_name').in('id', requests.map(r => r.user_id)).is('deleted_at', null);
+            const { data } = await _supabase
+                .from('public_profiles')
+                .select('id, display_name')
+                .in('id', requests.map(r => r.user_id))
+                .is('deleted_at', null);
             requestUsers = data || [];
         }
-        const requestsHtml = requestUsers.map(r => `
-            <div class="friend-item" data-request-id="${requests.find(req => req.user_id === r.id).id}">
-                <span>${escapeHtml(r.display_name)} 请求添加好友</span>
-                <div><button class="accept-friend">接受</button> <button class="reject-friend" style="background:#aaa;">拒绝</button></div>
-            </div>
-        `).join('');
-        const { data: friendships } = await _supabase.from('friendships').select('user_id, friend_id').or(`user_id.eq.${currentUser.id},friend_id.eq.${currentUser.id}`).eq('status', 'accepted');
-        let fids = [];
+        const requestsHtml = requestUsers.map(r => {
+            const req = requests.find(req => req.user_id === r.id);
+            return `
+                <div class="friend-item" data-request-id="${req.id}" data-user-id="${r.id}">
+                    <span>${escapeHtml(r.display_name)} 请求添加好友</span>
+                    <div><button class="accept-friend">接受</button> <button class="reject-friend" style="background:#aaa;">拒绝</button></div>
+                </div>
+            `;
+        }).join('');
+
+        // 已经是好友的用户
+        const { data: friendships } = await _supabase
+            .from('friendships')
+            .select('user_id, friend_id')
+            .or(`user_id.eq.${currentUser.id},friend_id.eq.${currentUser.id}`)
+            .eq('status', 'accepted');
+        let friendIds = [];
         friendships?.forEach(f => {
-            if (f.user_id === currentUser.id) fids.push(f.friend_id);
-            else fids.push(f.user_id);
+            if (f.user_id === currentUser.id) friendIds.push(f.friend_id);
+            else friendIds.push(f.user_id);
         });
         let friends = [];
-        if (fids.length) {
-            const { data } = await _supabase.from('public_profiles').select('id, display_name').in('id', fids).is('deleted_at', null);
+        if (friendIds.length) {
+            const { data } = await _supabase
+                .from('public_profiles')
+                .select('id, display_name')
+                .in('id', friendIds)
+                .is('deleted_at', null);
             friends = data || [];
         }
         const friendsHtml = friends.map(f => `<div class="friend-item" style="justify-content:flex-start;"><span>${escapeHtml(f.display_name)}</span></div>`).join('');
+
         return `
             <div class="main-content-card"><h3>好友请求</h3>${requestsHtml || '<div>暂无</div>'}</div>
             <div class="main-content-card"><h3>我的好友</h3>${friendsHtml || '<div>暂无好友</div>'}</div>
@@ -929,6 +955,100 @@
         `;
     }
 
+    function attachFriendEvents() {
+        // 接受好友请求
+        document.querySelectorAll('.accept-friend').forEach(btn => {
+            btn.onclick = async () => {
+                const requestId = btn.closest('.friend-item').dataset.requestId;
+                const { error } = await _supabase
+                    .from('friendships')
+                    .update({ status: 'accepted' })
+                    .eq('id', requestId);
+                if (error) {
+                    alert('接受失败: ' + error.message);
+                } else {
+                    alert('已添加好友');
+                    renderApp();
+                }
+            };
+        });
+
+        // 拒绝好友请求
+        document.querySelectorAll('.reject-friend').forEach(btn => {
+            btn.onclick = async () => {
+                const requestId = btn.closest('.friend-item').dataset.requestId;
+                const { error } = await _supabase
+                    .from('friendships')
+                    .delete()
+                    .eq('id', requestId);
+                if (error) {
+                    alert('拒绝失败: ' + error.message);
+                } else {
+                    renderApp();
+                }
+            };
+        });
+
+        // 搜索并添加好友（大小写不敏感）
+        const searchBtn = document.getElementById('search-add');
+        if (searchBtn) {
+            searchBtn.onclick = async () => {
+                const username = document.getElementById('add-friend-name').value.trim();
+                if (!username) return;
+
+                // 关键修复：使用 ilike 进行大小写不敏感搜索
+                const { data: users, error } = await _supabase
+                    .from('public_profiles')
+                    .select('id, display_name')
+                    .ilike('display_name', username)
+                    .is('deleted_at', null)
+                    .limit(1);
+                if (error) {
+                    alert('搜索出错: ' + error.message);
+                    return;
+                }
+                if (!users || users.length === 0) {
+                    alert('用户不存在');
+                    return;
+                }
+                const targetUser = users[0];
+                if (targetUser.id === currentUser.id) {
+                    alert('不能添加自己');
+                    return;
+                }
+
+                // 检查是否已是好友或已有待处理请求
+                const { data: existing } = await _supabase
+                    .from('friendships')
+                    .select('status')
+                    .or(`and(user_id.eq.${currentUser.id},friend_id.eq.${targetUser.id}),and(user_id.eq.${targetUser.id},friend_id.eq.${currentUser.id})`)
+                    .maybeSingle();
+                if (existing) {
+                    if (existing.status === 'accepted') alert('已经是好友');
+                    else if (existing.status === 'pending') alert('已发送过好友请求，请等待对方处理');
+                    else alert('无法添加好友');
+                    return;
+                }
+
+                // 发送好友申请
+                const { error: insertErr } = await _supabase
+                    .from('friendships')
+                    .insert({
+                        user_id: currentUser.id,
+                        friend_id: targetUser.id,
+                        status: 'pending'
+                    });
+                if (insertErr) {
+                    alert('发送失败: ' + insertErr.message);
+                } else {
+                    alert('好友申请已发送');
+                    renderApp();
+                }
+            };
+        }
+    }
+
+    // ========== 其他页面 ==========
     async function renderMyProfile() {
         return `
             <div class="main-content-card">
@@ -1016,6 +1136,7 @@
         `;
     }
 
+    // ========== 聊天视图 ==========
     function renderChatView() {
         return `
             <div class="chat-layout">
@@ -1194,7 +1315,7 @@
             .subscribe();
     }
 
-    // 电脑版
+    // ========== 电脑版 ==========
     async function renderPc() {
         const navItems = [
             { id: 'home', label: '主页' },
@@ -1292,7 +1413,7 @@
         else if (currentView === 'admin' && currentProfile.is_admin) attachAdminEvents();
     }
 
-    // 手机版
+    // ========== 手机版 ==========
     async function renderMobile() {
         const bottomNavItems = [
             { id: 'home', icon: '🏠', label: '主页' },
@@ -1396,39 +1517,7 @@
         else if (currentView === 'admin' && currentProfile.is_admin) attachAdminEvents();
     }
 
-    // 事件绑定
-    function attachFriendEvents() {
-        document.querySelectorAll('.accept-friend').forEach(btn => {
-            btn.onclick = async () => {
-                const requestId = btn.closest('.friend-item').dataset.requestId;
-                await _supabase.from('friendships').update({ status: 'accepted' }).eq('id', requestId);
-                renderApp();
-            };
-        });
-        document.querySelectorAll('.reject-friend').forEach(btn => {
-            btn.onclick = async () => {
-                const requestId = btn.closest('.friend-item').dataset.requestId;
-                await _supabase.from('friendships').delete().eq('id', requestId);
-                renderApp();
-            };
-        });
-        const searchBtn = document.getElementById('search-add');
-        if (searchBtn) {
-            searchBtn.onclick = async () => {
-                const username = document.getElementById('add-friend-name').value.trim();
-                if (!username) return;
-                const { data: user } = await _supabase.from('public_profiles').select('id').eq('display_name', username).is('deleted_at', null).maybeSingle();
-                if (!user) { alert('用户不存在'); return; }
-                if (user.id === currentUser.id) { alert('不能添加自己'); return; }
-                const { data: existing } = await _supabase.from('friendships').select('status').or(`and(user_id.eq.${currentUser.id},friend_id.eq.${user.id}),and(user_id.eq.${user.id},friend_id.eq.${currentUser.id})`).maybeSingle();
-                if (existing) { alert('已经是好友或已发送请求'); return; }
-                await _supabase.from('friendships').insert({ user_id: currentUser.id, friend_id: user.id, status: 'pending' });
-                alert('好友申请已发送');
-                renderApp();
-            };
-        }
-    }
-
+    // ========== 设置、管理事件 ==========
     function attachSettingsEvents() {
         document.getElementById('update-name')?.addEventListener('click', async () => {
             const newName = document.getElementById('new-name').value.trim();
