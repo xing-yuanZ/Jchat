@@ -899,7 +899,7 @@
         `;
     }
 
-    // ========== 修复后的好友页面 ==========
+    // ========== 好友页面 (修复搜索和申请) ==========
     async function renderFriends() {
         // 待处理的好友请求（别人发给我的）
         const { data: requests } = await _supabase
@@ -989,26 +989,30 @@
             };
         });
 
-        // 搜索并添加好友（大小写不敏感）
+        // 搜索并添加好友（大小写不敏感 + 去空格 + 调试日志）
         const searchBtn = document.getElementById('search-add');
         if (searchBtn) {
             searchBtn.onclick = async () => {
-                const username = document.getElementById('add-friend-name').value.trim();
-                if (!username) return;
+                let rawUsername = document.getElementById('add-friend-name').value.trim();
+                if (!rawUsername) return;
 
-                // 关键修复：使用 ilike 进行大小写不敏感搜索
+                console.log('搜索用户名:', rawUsername);
+
+                // 使用 ilike 进行大小写不敏感搜索，同时排除自己且未被删除
                 const { data: users, error } = await _supabase
                     .from('public_profiles')
                     .select('id, display_name')
-                    .ilike('display_name', username)
+                    .ilike('display_name', rawUsername)
                     .is('deleted_at', null)
                     .limit(1);
                 if (error) {
+                    console.error('搜索错误:', error);
                     alert('搜索出错: ' + error.message);
                     return;
                 }
+                console.log('搜索结果:', users);
                 if (!users || users.length === 0) {
-                    alert('用户不存在');
+                    alert('用户不存在，请确认用户名是否正确');
                     return;
                 }
                 const targetUser = users[0];
@@ -1017,12 +1021,15 @@
                     return;
                 }
 
-                // 检查是否已是好友或已有待处理请求
-                const { data: existing } = await _supabase
+                // 检查是否已经是好友或已有待处理请求
+                const { data: existing, error: checkErr } = await _supabase
                     .from('friendships')
                     .select('status')
                     .or(`and(user_id.eq.${currentUser.id},friend_id.eq.${targetUser.id}),and(user_id.eq.${targetUser.id},friend_id.eq.${currentUser.id})`)
                     .maybeSingle();
+                if (checkErr) {
+                    console.error('检查好友关系错误:', checkErr);
+                }
                 if (existing) {
                     if (existing.status === 'accepted') alert('已经是好友');
                     else if (existing.status === 'pending') alert('已发送过好友请求，请等待对方处理');
@@ -1039,6 +1046,7 @@
                         status: 'pending'
                     });
                 if (insertErr) {
+                    console.error('发送申请错误:', insertErr);
                     alert('发送失败: ' + insertErr.message);
                 } else {
                     alert('好友申请已发送');
@@ -1048,7 +1056,7 @@
         }
     }
 
-    // ========== 其他页面 ==========
+    // ========== 我的主页 ==========
     async function renderMyProfile() {
         return `
             <div class="main-content-card">
@@ -1066,6 +1074,7 @@
         `;
     }
 
+    // ========== 设置页面 ==========
     function renderSettings() {
         const themes = [
             { id: 'light', name: '浅色', icon: '☀️' },
@@ -1088,6 +1097,7 @@
         `;
     }
 
+    // ========== 管理面板 ==========
     async function renderAdmin() {
         const { data: users } = await _supabase.from('public_profiles').select('*').is('deleted_at', null);
         const { data: ann } = await _supabase.from('announcements').select('content').order('created_at', { ascending: false }).limit(1);
@@ -1517,7 +1527,7 @@
         else if (currentView === 'admin' && currentProfile.is_admin) attachAdminEvents();
     }
 
-    // ========== 设置、管理事件 ==========
+    // ========== 事件绑定（设置、管理） ==========
     function attachSettingsEvents() {
         document.getElementById('update-name')?.addEventListener('click', async () => {
             const newName = document.getElementById('new-name').value.trim();
