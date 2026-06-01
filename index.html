@@ -6,7 +6,7 @@
     <title>JChat - 即时通讯</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* ========== 主题变量（完整，同之前版本） ========== */
+        /* ========== 主题变量（完整） ========== */
         :root {
             --bg-body: #f5f7fb;
             --bg-card: white;
@@ -200,12 +200,23 @@
         .chat-area { flex: 1; display: flex; flex-direction: column; background: var(--bg-card); height: 100%; overflow: hidden; }
         .chat-header { padding: 16px 24px; background: var(--bg-card); border-bottom: 1px solid var(--border-color); font-weight: 600; font-size: 18px; flex-shrink: 0; }
         .messages-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
-        .message { max-width: 70%; padding: 8px 14px; border-radius: 18px; font-size: 14px; word-wrap: break-word; }
+        .message { max-width: 70%; padding: 8px 14px; border-radius: 18px; font-size: 14px; word-wrap: break-word; display: flex; flex-direction: column; gap: 6px; }
         .message.sent { align-self: flex-end; background: var(--message-sent-bg); color: var(--message-sent-text); }
         .message.received { align-self: flex-start; background: var(--message-received-bg); color: var(--message-received-text); }
-        .input-area { padding: 16px 24px; background: var(--bg-card); border-top: 1px solid var(--border-color); display: flex; gap: 12px; flex-shrink: 0; }
+        .message-content { word-break: break-word; }
+        .message-media { max-width: 100%; border-radius: 12px; margin-top: 4px; cursor: pointer; }
+        .message-media img, .message-media video { max-width: 200px; max-height: 200px; border-radius: 12px; }
+        .input-area { padding: 16px 24px; background: var(--bg-card); border-top: 1px solid var(--border-color); display: flex; gap: 12px; flex-shrink: 0; align-items: center; flex-wrap: wrap; }
+        .input-wrapper { flex: 1; display: flex; gap: 8px; align-items: center; position: relative; }
         #chat-input { flex: 1; padding: 10px 16px; border: 1px solid var(--input-border); border-radius: 30px; background: var(--bg-card); color: var(--text-primary); }
+        .emoji-btn, .file-btn { background: none; border: none; font-size: 24px; cursor: pointer; padding: 4px 8px; transition: transform 0.1s; }
+        .emoji-btn:hover, .file-btn:hover { transform: scale(1.1); }
+        .emoji-picker { position: absolute; bottom: 50px; left: 0; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 12px; width: 280px; max-height: 200px; overflow-y: auto; z-index: 200; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none; flex-wrap: wrap; gap: 8px; }
+        .emoji-picker.active { display: flex; }
+        .emoji-item { font-size: 24px; cursor: pointer; padding: 4px; transition: transform 0.1s; }
+        .emoji-item:hover { transform: scale(1.2); }
         #chat-send { background: var(--accent-color); border: none; padding: 8px 20px; border-radius: 30px; color: white; cursor: pointer; }
+        /* 其他样式 */
         .card-with-scroll { display: flex; flex-direction: column; max-height: calc(100vh - 180px); overflow: hidden; }
         .table-wrapper { flex: 1; overflow-y: auto; margin-top: 12px; border: 1px solid var(--border-color); border-radius: 12px; min-height: 200px; }
         .friend-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
@@ -229,6 +240,7 @@
             .sidebar { width: 100%; max-height: 200px; border-right: none; border-bottom: 1px solid var(--border-color); }
             .chat-area { height: calc(100% - 200px); }
             .card-with-scroll { max-height: calc(100vh - 140px); }
+            .emoji-picker { width: 240px; left: -40px; }
         }
     </style>
 </head>
@@ -243,6 +255,7 @@
 
     const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const EMAIL_SUFFIX = '@jchat.local';
+    const STORAGE_BUCKET = 'chat_files';
 
     let currentUser = null;
     let currentProfile = null;
@@ -252,6 +265,7 @@
     let isMobile = window.innerWidth <= 768;
     let unreadCounts = new Map();
 
+    // 主题
     let currentTheme = localStorage.getItem('jchat_theme') || 'light';
     function applyTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);
@@ -276,6 +290,100 @@
         return name ? name.charAt(0).toUpperCase() : '?';
     }
 
+    // 解析消息内容中的文件URL并渲染媒体
+    function renderMessageContent(content) {
+        if (!content) return '';
+        const urlRegex = /(https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|mp4|webm|mov))/gi;
+        let lastIndex = 0;
+        let parts = [];
+        let match;
+        while ((match = urlRegex.exec(content)) !== null) {
+            if (match.index > lastIndex) {
+                parts.push({ type: 'text', content: content.substring(lastIndex, match.index) });
+            }
+            const url = match[0];
+            const ext = match[2].toLowerCase();
+            const isImage = ['jpg', 'jpeg', 'png', 'gif'].includes(ext);
+            const isVideo = ['mp4', 'webm', 'mov'].includes(ext);
+            parts.push({ type: isImage ? 'image' : (isVideo ? 'video' : 'file'), url: url });
+            lastIndex = match.index + url.length;
+        }
+        if (lastIndex < content.length) {
+            parts.push({ type: 'text', content: content.substring(lastIndex) });
+        }
+        if (parts.length === 0) {
+            return `<div class="message-content">${escapeHtml(content)}</div>`;
+        }
+        let html = '<div class="message-content">';
+        for (let part of parts) {
+            if (part.type === 'text') {
+                html += escapeHtml(part.content);
+            } else if (part.type === 'image') {
+                html += `<img src="${escapeHtml(part.url)}" class="message-media" onclick="window.open('${escapeHtml(part.url)}', '_blank')" style="max-width:200px; max-height:200px; border-radius:12px; cursor:pointer;">`;
+            } else if (part.type === 'video') {
+                html += `<video controls class="message-media" style="max-width:200px; max-height:200px; border-radius:12px;" src="${escapeHtml(part.url)}"></video>`;
+            } else if (part.type === 'file') {
+                html += `<a href="${escapeHtml(part.url)}" target="_blank" class="message-media">📎 查看文件</a>`;
+            }
+        }
+        html += '</div>';
+        return html;
+    }
+
+    // 上传文件到 Supabase Storage
+    async function uploadFile(file) {
+        if (!file) return null;
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${currentUser.id}/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+        const { data, error } = await _supabase.storage
+            .from(STORAGE_BUCKET)
+            .upload(fileName, file);
+        if (error) {
+            console.error('上传失败:', error);
+            alert('上传失败: ' + error.message);
+            return null;
+        }
+        const { data: { publicUrl } } = _supabase.storage.from(STORAGE_BUCKET).getPublicUrl(fileName);
+        return publicUrl;
+    }
+
+    // 发送消息（支持文本+文件）
+    async function sendMessageWithFile(file) {
+        if (!currentChatUser) return;
+        const inputEl = document.getElementById('chat-input');
+        let content = inputEl ? inputEl.value.trim() : '';
+        if (file) {
+            const url = await uploadFile(file);
+            if (url) {
+                content = content ? content + ' ' + url : url;
+            } else {
+                return;
+            }
+        }
+        if (!content) return;
+        if (currentProfile.is_muted) { alert('你已被禁言'); return; }
+        const { error } = await _supabase.from('messages').insert({
+            from_user_id: currentUser.id,
+            to_user_id: currentChatUser.id,
+            content: content
+        });
+        if (!error) {
+            if (inputEl) inputEl.value = '';
+            // 乐观更新显示
+            const container = document.getElementById('messages-container');
+            if (container) {
+                const div = document.createElement('div');
+                div.className = 'message sent';
+                div.innerHTML = renderMessageContent(content);
+                container.appendChild(div);
+                container.scrollTop = container.scrollHeight;
+            }
+        } else {
+            alert('发送失败: ' + error.message);
+        }
+    }
+
+    // ========== 原有函数（认证、好友、设置、管理等） ==========
     async function loadUnreadCounts() {
         const { data, error } = await _supabase
             .from('unread_messages')
@@ -345,7 +453,6 @@
         }));
     }
 
-    // ========== 认证界面 ==========
     function renderAuth() {
         return `
             <div class="auth-page">
@@ -400,7 +507,6 @@
                     await loadUnreadCounts();
                     renderApp();
                 } else {
-                    // 检查用户名是否已存在（排除软删除的用户）
                     const checkExist = _supabase
                         .from('public_profiles')
                         .select('id')
@@ -439,7 +545,6 @@
         };
     }
 
-    // ========== 页面渲染函数 ==========
     async function renderHome() {
         const { data: ann } = await _supabase.from('announcements').select('content').order('created_at', { ascending: false }).limit(1);
         const announcement = ann?.[0]?.content || '欢迎使用 JChat！';
@@ -763,14 +868,25 @@
             .order('created_at', { ascending: true });
 
         const msgsHtml = messages?.map(m => `
-            <div class="message ${m.from_user_id === currentUser.id ? 'sent' : 'received'}">${escapeHtml(m.content)}</div>
+            <div class="message ${m.from_user_id === currentUser.id ? 'sent' : 'received'}">
+                ${renderMessageContent(m.content)}
+            </div>
         `).join('') || '<div style="text-align:center;color:var(--text-secondary);">暂无消息</div>';
 
         const chatAreaHtml = `
             <div class="chat-header">${escapeHtml(currentChatUser.display_name)}</div>
             <div class="messages-container" id="messages-container">${msgsHtml}</div>
             <div class="input-area">
-                <input type="text" id="chat-input" placeholder="输入消息...">
+                <div class="input-wrapper">
+                    <button class="emoji-btn" id="emoji-btn">😀</button>
+                    <button class="file-btn" id="file-btn">📎</button>
+                    <input type="text" id="chat-input" placeholder="输入消息...">
+                    <div class="emoji-picker" id="emoji-picker">
+                        ${['😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇','🙂','🙃','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😝','😜','🤪','🤨','🧐','🤓','😎','🤩','🥳','😏','😒','😞','😔','😟','😕','🙁','☹️','😣','😖','😫','😩','🥺','😢','😭','😤','😠','😡','🤬','🤯','😳','🥵','🥶','😱','😨','😰','😥','😓','🤗','🤔','🤭','🤫','🤥','😶','😐','😑','😬','🙄','😯','😦','😧','😮','😲','🥱','😴','🤤','😪','😵','🤐','🥴','🤢','🤮','🤧','😷','🤒','🤕','🤑','🤠','😈','👿','👹','👺','🤡','💩','👻','💀','👽','🤖','🎃','😺','😸','😹','😻','😼','😽','🙀','😿','😾']}
+                            .map(e => `<span class="emoji-item">${e}</span>`).join('')}
+                    </div>
+                    <input type="file" id="file-input" style="display:none;" accept="image/*,video/*">
+                </div>
                 <button id="chat-send">发送</button>
             </div>
         `;
@@ -779,28 +895,51 @@
             chatArea.innerHTML = chatAreaHtml;
             const container = document.getElementById('messages-container');
             if (container) container.scrollTop = container.scrollHeight;
-        }
 
-        const sendBtn = document.getElementById('chat-send');
-        const input = document.getElementById('chat-input');
-        if (sendBtn && input) {
-            const send = async () => {
-                const content = input.value.trim();
-                if (!content || !currentChatUser) return;
-                if (currentProfile.is_muted) { alert('你已被禁言'); return; }
-                await _supabase.from('messages').insert({ from_user_id: currentUser.id, to_user_id: currentChatUser.id, content });
-                input.value = '';
-                const container = document.getElementById('messages-container');
-                if (container) {
-                    const div = document.createElement('div');
-                    div.className = 'message sent';
-                    div.innerText = content;
-                    container.appendChild(div);
-                    container.scrollTop = container.scrollHeight;
-                }
-            };
-            sendBtn.onclick = send;
-            input.onkeypress = e => { if (e.key === 'Enter') send(); };
+            // 表情选择器
+            const emojiBtn = document.getElementById('emoji-btn');
+            const emojiPicker = document.getElementById('emoji-picker');
+            if (emojiBtn && emojiPicker) {
+                emojiBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    emojiPicker.classList.toggle('active');
+                };
+                document.addEventListener('click', () => emojiPicker.classList.remove('active'));
+                document.querySelectorAll('.emoji-item').forEach(el => {
+                    el.addEventListener('click', () => {
+                        const input = document.getElementById('chat-input');
+                        if (input) {
+                            input.value += el.innerText;
+                            input.focus();
+                        }
+                        emojiPicker.classList.remove('active');
+                    });
+                });
+            }
+
+            // 文件上传
+            const fileBtn = document.getElementById('file-btn');
+            const fileInput = document.getElementById('file-input');
+            if (fileBtn && fileInput) {
+                fileBtn.onclick = () => fileInput.click();
+                fileInput.onchange = async (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        await sendMessageWithFile(file);
+                        fileInput.value = '';
+                    }
+                };
+            }
+
+            const sendBtn = document.getElementById('chat-send');
+            const input = document.getElementById('chat-input');
+            if (sendBtn && input) {
+                const send = async () => {
+                    await sendMessageWithFile(null);
+                };
+                sendBtn.onclick = send;
+                input.onkeypress = e => { if (e.key === 'Enter') send(); };
+            }
         }
     }
 
@@ -820,7 +959,7 @@
                     if (container) {
                         const div = document.createElement('div');
                         div.className = 'message received';
-                        div.innerText = payload.new.content;
+                        div.innerHTML = renderMessageContent(payload.new.content);
                         container.appendChild(div);
                         container.scrollTop = container.scrollHeight;
                     }
@@ -1157,7 +1296,6 @@
             const username = document.getElementById('new-admin-name').value.trim();
             const pwd = document.getElementById('new-admin-pwd').value;
             if (!username || !pwd) return alert('请填写用户名和密码');
-            // 检查用户名是否已存在（排除软删除的用户）
             const { data: existing } = await _supabase
                 .from('public_profiles')
                 .select('id')
