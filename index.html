@@ -6,7 +6,7 @@
     <title>JChat - 即时通讯</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* ========== 主题变量（完整） ========== */
+        /* ========== 主题变量 ========== */
         :root {
             --bg-body: #f5f7fb;
             --bg-card: white;
@@ -290,7 +290,7 @@
         return name ? name.charAt(0).toUpperCase() : '?';
     }
 
-    // 解析消息内容中的文件URL并渲染媒体
+    // ========== 渲染消息内容（修复 class 关键字冲突） ==========
     function renderMessageContent(content) {
         if (!content) return '';
         const urlRegex = /(https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|mp4|webm|mov))/gi;
@@ -299,7 +299,7 @@
         let match;
         while ((match = urlRegex.exec(content)) !== null) {
             if (match.index > lastIndex) {
-                parts.push({ type: 'text', content: content.substring(lastIndex, match.index) });
+                parts.push({ type: 'text', text: content.substring(lastIndex, match.index) });
             }
             const url = match[0];
             const ext = match[2].toLowerCase();
@@ -309,7 +309,7 @@
             lastIndex = match.index + url.length;
         }
         if (lastIndex < content.length) {
-            parts.push({ type: 'text', content: content.substring(lastIndex) });
+            parts.push({ type: 'text', text: content.substring(lastIndex) });
         }
         if (parts.length === 0) {
             return `<div class="message-content">${escapeHtml(content)}</div>`;
@@ -317,7 +317,7 @@
         let html = '<div class="message-content">';
         for (let part of parts) {
             if (part.type === 'text') {
-                html += escapeHtml(part.content);
+                html += escapeHtml(part.text);
             } else if (part.type === 'image') {
                 html += `<img src="${escapeHtml(part.url)}" class="message-media" onclick="window.open('${escapeHtml(part.url)}', '_blank')" style="max-width:200px; max-height:200px; border-radius:12px; cursor:pointer;">`;
             } else if (part.type === 'video') {
@@ -330,7 +330,7 @@
         return html;
     }
 
-    // 上传文件到 Supabase Storage
+    // 上传文件
     async function uploadFile(file) {
         if (!file) return null;
         const fileExt = file.name.split('.').pop();
@@ -347,7 +347,7 @@
         return publicUrl;
     }
 
-    // 发送消息（支持文本+文件）
+    // 发送消息（文本/文件）
     async function sendMessageWithFile(file) {
         if (!currentChatUser) return;
         const inputEl = document.getElementById('chat-input');
@@ -369,7 +369,6 @@
         });
         if (!error) {
             if (inputEl) inputEl.value = '';
-            // 乐观更新显示
             const container = document.getElementById('messages-container');
             if (container) {
                 const div = document.createElement('div');
@@ -383,7 +382,7 @@
         }
     }
 
-    // ========== 原有函数（认证、好友、设置、管理等） ==========
+    // ========== 数据库操作 ==========
     async function loadUnreadCounts() {
         const { data, error } = await _supabase
             .from('unread_messages')
@@ -453,6 +452,7 @@
         }));
     }
 
+    // ========== 认证界面 ==========
     function renderAuth() {
         return `
             <div class="auth-page">
@@ -545,6 +545,7 @@
         };
     }
 
+    // ========== 页面渲染 ==========
     async function renderHome() {
         const { data: ann } = await _supabase.from('announcements').select('content').order('created_at', { ascending: false }).limit(1);
         const announcement = ann?.[0]?.content || '欢迎使用 JChat！';
@@ -735,21 +736,17 @@
                 </div>
                 <div class="table-wrapper">
                     <table>
-                        <thead><tr><th class="checkbox-col"></th><th>用户名</th><th>管理员</th><th>禁言</th><th>操作</th></tr></thead>
+                        <thead>
+                            <tr><th class="checkbox-col"></th><th>用户名</th><th>管理员</th><th>禁言</th><th>操作</th></tr>
+                        </thead>
                         <tbody id="admin-user-table">
                             ${users?.map(u => `
                                 <tr data-user-id="${u.id}">
                                     <td class="checkbox-col"><input type="checkbox" class="user-checkbox" value="${u.id}"></td>
                                     <td>${escapeHtml(u.display_name)}</td>
-                                    <td>${u.is_admin ? '是' : '否'}</td>
-                                    <td>${u.is_muted ? '是' : '否'}</td>
-                                    <td>
-                                        ${u.id !== currentUser.id ? `
-                                            ${u.is_admin ? `<button class="remove-admin" data-id="${u.id}">取消管理员</button>` : `<button class="set-admin" data-id="${u.id}">设为管理员</button>`}
-                                            <button class="toggle-mute" data-id="${u.id}">${u.is_muted ? '解除禁言' : '禁言'}</button>
-                                            <button class="admin-del" data-id="${u.id}">删除</button>
-                                        ` : '<span style="color:#999;">(自己)</span>'}
-                                    </td>
+                                    <td>${u.is_admin ? '是' : '<button class="set-admin" data-id="'+u.id+'">设为管理员</button>'}</td>
+                                    <td>${u.is_muted ? '已禁言' : '<button class="toggle-mute" data-id="'+u.id+'">禁言</button>'}</td>
+                                    <td><button class="admin-del" data-id="${u.id}">删除</button></td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -968,6 +965,7 @@
             .subscribe();
     }
 
+    // ========== 电脑版 ==========
     async function renderPc() {
         const navItems = [
             { id: 'home', label: '主页' },
@@ -1064,6 +1062,7 @@
         else if (currentView === 'admin' && currentProfile.is_admin) attachAdminEvents();
     }
 
+    // ========== 手机版 ==========
     async function renderMobile() {
         const bottomNavItems = [
             { id: 'home', icon: '🏠', label: '主页' },
@@ -1167,6 +1166,7 @@
         else if (currentView === 'admin' && currentProfile.is_admin) attachAdminEvents();
     }
 
+    // ========== 设置和管理事件 ==========
     function attachSettingsEvents() {
         document.getElementById('update-name')?.addEventListener('click', async () => {
             const newName = document.getElementById('new-name').value.trim();
