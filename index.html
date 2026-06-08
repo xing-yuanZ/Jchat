@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jchat - 微信版</title>
+    <title>Jchat - 微信版 (用户名登录)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -70,8 +70,8 @@
         <div class="auth-card">
             <h2 id="auth-title">登录 Jchat</h2>
             <div class="form-group">
-                <input type="email" id="auth-email" class="form-control" placeholder="电子邮箱" required>
-                <input type="password" id="auth-password" class="form-control" placeholder="密码" required>
+                <input type="text" id="auth-username" class="form-control" placeholder="请输入用户名" required>
+                <input type="password" id="auth-password" class="form-control" placeholder="请输入密码" required>
                 <button class="btn" id="auth-submit-btn" onclick="handleAuth()">登录</button>
             </div>
             <div class="auth-toggle" onclick="toggleAuthMode()">没有账号？立即注册</div>
@@ -90,7 +90,7 @@
         <div class="main-panel">
             
             <div id="view-chat" class="view-section active">
-                <div class="panel-header">大厅聊天室</div>
+                <div class="panel-header" id="chat-title">大厅聊天室</div>
                 <div class="chat-box">
                     <div class="chat-messages" id="chat-messages"></div>
                     <div class="chat-input-area">
@@ -106,7 +106,7 @@
                 <div class="panel-header">通讯录</div>
                 <div class="list-container">
                     <div class="form-group">
-                        <input type="email" id="friend-email" class="form-control" placeholder="输入好友的邮箱">
+                        <input type="text" id="friend-username" class="form-control" placeholder="输入好友的用户名">
                         <button class="btn" onclick="addFriend()">添加好友</button>
                     </div>
                     <h3>我的好友列表</h3>
@@ -137,12 +137,13 @@
     </div>
 
     <script>
-        // 初始化 Supabase 客户端（已自动配置你的凭证）
+        // 初始化 Supabase 客户端
         const SUPABASE_URL = "https://cxilodvbdhtxtrldoswl.supabase.co"; 
         const SUPABASE_ANON_KEY = "sb_publishable_36lHK24HL6drOmuhSTTv8g_w2n0fU5H";
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let currentUser = null;
+        let currentUsername = ""; // 存放当前去掉伪邮箱后缀的纯用户名
         let isSignUpMode = false;
         let userProfile = { role: 'user', is_muted: false };
 
@@ -151,7 +152,9 @@
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
                 currentUser = session.user;
+                currentUsername = currentUser.email.split('@')[0]; // 从假邮箱中提取用户名
                 document.getElementById('auth-overlay').style.display = 'none';
+                document.getElementById('chat-title').innerText = `大厅聊天室 (当前用户: ${currentUsername})`;
                 await checkUserRoleAndStatus();
                 loadMessages();
                 listenToNewMessages();
@@ -176,29 +179,35 @@
             isSignUpMode = !isSignUpMode;
             document.getElementById('auth-title').innerText = isSignUpMode ? "注册 Jchat 账号" : "登录 Jchat";
             document.getElementById('auth-submit-btn').innerText = isSignUpMode ? "注册并登录" : "登录";
-            document.querySelector('.auth-toggle').innerText = isSignUpMode ? "已有账号？返回登录" : "没有账号？立即注册";
+            document.querySelector('.auth-toggle').innerText = isSignUpMode ? "没有账号？返回登录" : "没有账号？立即注册";
         }
 
-        // 登录和注册
+        // 登录和注册核心逻辑（包含假邮箱转换算法）
         async function handleAuth() {
-            const email = document.getElementById('auth-email').value.trim();
+            const username = document.getElementById('auth-username').value.trim();
             const password = document.getElementById('auth-password').value;
-            if(!email || !password) return alert('请填写完整信息');
+            if(!username || !password) return alert('请填写完整信息');
+            
+            // 💡 算法：把纯用户名自动伪装成邮箱格式，绕过 Supabase 限制
+            const fakeEmail = `${username}@jchat.com`;
 
             let result;
             if (isSignUpMode) {
-                result = await supabase.auth.signUp({ email, password });
-                if(result.error) return alert('注册失败: ' + result.error.message);
-                // 同步创建 profile
-                await supabase.from('profiles').insert([{ id: result.data.user.id, email: email, role: 'user', is_muted: false }]);
+                result = await supabase.auth.signUp({ email: fakeEmail, password });
+                if(result.error) return alert('注册失败(用户名可能已被占用): ' + result.error.message);
+                
+                // 在 profiles 权限表里同步记录
+                await supabase.from('profiles').insert([{ id: result.data.user.id, username: username, role: 'user', is_muted: false }]);
                 alert('注册成功，正在进入应用！');
             } else {
-                result = await supabase.auth.signInWithPassword({ email, password });
-                if(result.error) return alert('登录失败: ' + result.error.message);
+                result = await supabase.auth.signInWithPassword({ email: fakeEmail, password });
+                if(result.error) return alert('登录失败: 用户名或密码错误');
             }
 
             currentUser = result.data.user;
+            currentUsername = username;
             document.getElementById('auth-overlay').style.display = 'none';
+            document.getElementById('chat-title').innerText = `大厅聊天室 (当前用户: ${currentUsername})`;
             await checkUserRoleAndStatus();
             loadMessages();
             listenToNewMessages();
@@ -232,7 +241,9 @@
                     const div = document.createElement('div');
                     div.classList.add('msg');
                     if(msg.sender_id === currentUser.id) div.classList.add('me');
-                    div.textContent = `${msg.sender_email}: ${msg.content}`;
+                    // 💡 显示时，把发送者的假邮箱后缀切掉，只显示纯用户名
+                    const showName = msg.sender_email ? msg.sender_email.split('@')[0] : "未知用户";
+                    div.textContent = `${showName}: ${msg.content}`;
                     container.appendChild(div);
                 });
                 container.scrollTop = container.scrollHeight;
@@ -262,7 +273,8 @@
                 const div = document.createElement('div');
                 div.classList.add('msg');
                 if(msg.sender_id === currentUser.id) div.classList.add('me');
-                div.textContent = `${msg.sender_email}: ${msg.content}`;
+                const showName = msg.sender_email ? msg.sender_email.split('@')[0] : "未知用户";
+                div.textContent = `${showName}: ${msg.content}`;
                 container.appendChild(div);
                 container.scrollTop = container.scrollHeight;
             }).subscribe();
@@ -275,20 +287,21 @@
             container.innerHTML = data && data.length ? '' : '<p style="color:#999;">暂无好友</p>';
             if (data) {
                 data.forEach(f => {
-                    container.innerHTML += `<div class="list-item"><span>${f.friend_email}</span><button class="btn" onclick="switchView('chat')">发消息</button></div>`;
+                    container.innerHTML += `<div class="list-item"><span>${f.friend_username}</span><button class="btn" onclick="switchView('chat')">发消息</button></div>`;
                 });
             }
         }
 
         async function addFriend() {
-            const email = document.getElementById('friend-email').value.trim();
-            if(!email) return;
-            if(email === currentUser.email) return alert('不能添加自己为好友');
+            const username = document.getElementById('friend-username').value.trim();
+            if(!username) return;
+            if(username === currentUsername) return alert('不能添加自己为好友');
             
-            const { error } = await supabase.from('friends').insert([{ user_id: currentUser.id, friend_email: email }]);
+            // 存入数据库时，直接记录好友的用户名
+            const { error } = await supabase.from('friends').insert([{ user_id: currentUser.id, friend_username: username }]);
             if (error) alert('添加失败: ' + error.message);
             else { alert('已成功添加到通讯录！'); loadFriends(); }
-            document.getElementById('friend-email').value = '';
+            document.getElementById('friend-username').value = '';
         }
 
         /* ==================== 功能三：公告栏 ==================== */
@@ -325,10 +338,12 @@
             if (data) {
                 data.forEach(u => {
                     if (u.id === currentUser.id) return; 
+                    // 确保有展示的用户名
+                    const nameToShow = u.username || (u.email ? u.email.split('@')[0] : "未命名");
                     container.innerHTML += `
                         <div class="list-item">
                             <div>
-                                <strong>${u.email}</strong> 
+                                <strong>${nameToShow}</strong> 
                                 <span style="font-size:12px; color:${u.is_muted ? 'red' : 'green'};">(${u.is_muted ? '已禁言' : '正常'})</span>
                             </div>
                             <div style="display:flex; gap:10px;">
