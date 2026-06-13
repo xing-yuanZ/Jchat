@@ -21,7 +21,7 @@
             height: 100vh;
         }
 
-        /* 主题色：蓝色 */
+        /* 蓝色主题变量 */
         :root {
             --primary: #007aff;
             --primary-dark: #005fc1;
@@ -47,6 +47,10 @@
             padding: 32px;
             width: 320px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .login-card:active {
+            transform: scale(0.99);
         }
         .login-card h2 {
             text-align: center;
@@ -60,6 +64,11 @@
             border: 1px solid #ddd;
             border-radius: 30px;
             font-size: 16px;
+            transition: border-color 0.2s;
+        }
+        .login-card input:focus {
+            border-color: var(--primary);
+            outline: none;
         }
         .login-card button {
             width: 100%;
@@ -76,14 +85,15 @@
         .login-card button:active {
             transform: scale(0.98);
         }
-        .login-card button:hover {
-            background: var(--primary-dark);
-        }
         .auth-switch {
             text-align: center;
             margin-top: 16px;
             color: var(--primary);
             cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .auth-switch:active {
+            opacity: 0.7;
         }
         .error-msg {
             color: var(--danger);
@@ -99,15 +109,15 @@
             overflow: hidden;
         }
 
-        /* 两个全屏视图：好友列表页、聊天页 */
+        /* 全屏视图切换 */
         .view {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            transition: transform 0.3s ease, opacity 0.3s ease;
             background: var(--bg-body);
+            transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1), opacity 0.3s;
             overflow-y: auto;
         }
         .view.hidden {
@@ -121,7 +131,7 @@
             pointer-events: auto;
         }
 
-        /* 好友列表页样式 */
+        /* 好友列表页 */
         .friends-header {
             background: white;
             padding: 16px;
@@ -141,6 +151,10 @@
             font-size: 24px;
             cursor: pointer;
             padding: 4px;
+            transition: opacity 0.2s;
+        }
+        .menu-btn:active {
+            opacity: 0.6;
         }
         .friend-item {
             display: flex;
@@ -149,10 +163,11 @@
             background: white;
             border-bottom: 1px solid var(--border);
             cursor: pointer;
-            transition: background 0.2s;
+            transition: background 0.2s, transform 0.1s;
         }
         .friend-item:active {
             background: #f0f0f0;
+            transform: scale(0.99);
         }
         .avatar {
             width: 52px;
@@ -203,7 +218,7 @@
             color: var(--text-secondary);
         }
 
-        /* 聊天页样式 */
+        /* 聊天页 */
         .chat-header {
             background: white;
             padding: 12px 16px;
@@ -220,6 +235,10 @@
             margin-right: 16px;
             width: 32px;
             text-align: center;
+            transition: opacity 0.2s;
+        }
+        .back-btn:active {
+            opacity: 0.6;
         }
         .chat-title {
             flex: 1;
@@ -240,6 +259,7 @@
             max-width: 80%;
             display: flex;
             flex-direction: column;
+            animation: fadeInUp 0.2s ease;
         }
         .message.sent {
             align-self: flex-end;
@@ -252,7 +272,6 @@
             border-radius: 20px;
             font-size: 15px;
             word-wrap: break-word;
-            animation: fadeInUp 0.2s ease;
         }
         .message.sent .bubble {
             background: var(--primary);
@@ -290,6 +309,10 @@
             font-size: 26px;
             cursor: pointer;
             padding: 4px;
+            transition: transform 0.1s;
+        }
+        .chat-input-area .emoji-btn:active, .chat-input-area .file-btn:active {
+            transform: scale(0.9);
         }
         .input-wrapper {
             flex: 1;
@@ -339,9 +362,13 @@
             font-size: 28px;
             cursor: pointer;
             padding: 4px;
+            transition: transform 0.1s;
+        }
+        .emoji-item:active {
+            transform: scale(1.2);
         }
 
-        /* 底部菜单（用于切换到其他页面） */
+        /* 底部菜单（用于切换其他页面） */
         .bottom-menu {
             position: fixed;
             bottom: 0;
@@ -363,7 +390,10 @@
             font-size: 12px;
             color: #8e8e93;
             cursor: pointer;
-            transition: color 0.2s;
+            transition: color 0.2s, transform 0.1s;
+        }
+        .menu-item:active {
+            transform: scale(0.96);
         }
         .menu-item.active {
             color: var(--primary);
@@ -372,17 +402,22 @@
             font-size: 22px;
         }
 
-        /* 其他页面样式（设置、个人主页、管理） */
+        /* 其他页面卡片样式 */
         .page {
             padding: 16px;
             background: var(--bg-body);
             min-height: 100%;
+            padding-bottom: 80px;
         }
         .card {
             background: white;
             border-radius: 16px;
             padding: 16px;
             margin-bottom: 16px;
+            transition: transform 0.1s;
+        }
+        .card:active {
+            transform: scale(0.99);
         }
         .card h3 {
             margin-bottom: 12px;
@@ -395,7 +430,7 @@
             color: white;
             font-weight: 500;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: transform 0.2s, background 0.2s;
         }
         button:active {
             transform: scale(0.98);
@@ -403,12 +438,20 @@
         .danger-btn {
             background: var(--danger);
         }
+        .danger-btn:active {
+            background: var(--danger-dark);
+        }
         input, textarea {
             width: 100%;
             padding: 12px;
             border: 1px solid #ddd;
             border-radius: 12px;
             margin-bottom: 12px;
+            transition: border-color 0.2s;
+        }
+        input:focus, textarea:focus {
+            border-color: var(--primary);
+            outline: none;
         }
         .table-wrapper {
             max-height: 300px;
@@ -449,7 +492,7 @@
 
         let currentUser = null;
         let currentProfile = null;
-        let currentView = 'friends';   // friends, chat, profile, settings, admin
+        let currentView = 'friends';   // friends, chat, contacts, profile, settings, admin
         let currentChatUser = null;
         let messagesSubscription = null;
         let unreadCounts = new Map();
@@ -502,7 +545,6 @@
             return publicUrl;
         }
 
-        // 发送消息（文本或文件）
         async function sendMessageWithFile(file) {
             if (!currentChatUser) return;
             const inputEl = document.getElementById('chat-input');
@@ -612,7 +654,6 @@
 
         // 通讯录页面（好友申请、添加好友）
         async function renderContactsView() {
-            // 好友请求
             const { data: requests } = await _supabase.from('friendships').select('id, user_id').eq('friend_id', currentUser.id).eq('status', 'pending');
             let requestUsers = [];
             if (requests && requests.length) {
@@ -620,7 +661,6 @@
                 requestUsers = data || [];
             }
             const requestsHtml = requestUsers.map(r => `<div class="friend-item" data-request-id="${requests.find(req => req.user_id === r.id).id}"><span>${escapeHtml(r.display_name)} 请求添加好友</span><div><button class="accept-friend">接受</button><button class="reject-friend" style="background:#aaa;">拒绝</button></div></div>`).join('') || '<div>暂无</div>';
-            // 已有好友列表
             const list = await getFriendsList();
             const friendsHtml = list.map(f => `<div class="friend-item" style="justify-content:flex-start;"><span>${escapeHtml(f.name)}</span></div>`).join('') || '<div>暂无好友</div>';
             return `
@@ -637,7 +677,7 @@
             `;
         }
 
-        // 个人中心页面（我的主页、设置、管理）
+        // 个人中心页面（我的主页、设置、管理入口）
         async function renderProfileView() {
             let adminBtn = '';
             if (currentProfile.is_admin) adminBtn = '<button id="go-admin" style="margin-top:8px;">管理面板</button>';
@@ -696,9 +736,9 @@
                     <div class="card"><h3>创建新用户</h3><input id="new-admin-name" placeholder="用户名"><input id="new-admin-pwd" placeholder="密码"><button id="admin-create-user">创建</button></div>
                 </div>
                 <div class="bottom-menu">
-                    <div class="menu-item" data-view="friends">💬 聊天</div>
-                    <div class="menu-item" data-view="contacts">👥 通讯录</div>
-                    <div class="menu-item" data-view="profile">😀 我</div>
+                    <div class="menu-item" data-view="friends"><div class="menu-icon">💬</div><span>聊天</span></div>
+                    <div class="menu-item" data-view="contacts"><div class="menu-icon">👥</div><span>通讯录</span></div>
+                    <div class="menu-item" data-view="profile"><div class="menu-icon">😀</div><span>我</span></div>
                 </div>
             `;
         }
@@ -739,7 +779,7 @@
             `;
         }
 
-        // 切换视图（全屏切换动画）
+        // 切换视图（全屏滑动动画）
         async function switchView(view, extra = null) {
             if (view === 'chat' && extra) currentChatUser = extra;
             else if (view !== 'chat') currentChatUser = null;
@@ -765,9 +805,7 @@
                         const id = el.dataset.id;
                         const name = el.dataset.name;
                         if (id) {
-                            // 切换到聊天视图
                             switchView('chat', { id: id, display_name: name });
-                            // 清除未读
                             if (unreadCounts.get(id) > 0) {
                                 clearUnreadForUser(id).then(() => loadUnreadCounts());
                             }
@@ -776,7 +814,6 @@
                 });
                 const menuBtn = document.getElementById('main-menu-btn');
                 if (menuBtn) menuBtn.onclick = () => alert('更多功能开发中');
-                // 底部菜单
                 document.querySelectorAll('.menu-item').forEach(el => {
                     el.addEventListener('click', () => {
                         const view = el.dataset.view;
@@ -786,7 +823,6 @@
                     });
                 });
             } else if (currentView === 'contacts') {
-                // 接受/拒绝好友请求
                 document.querySelectorAll('.accept-friend').forEach(btn => btn.onclick = async function() {
                     const reqId = this.closest('.friend-item').dataset.requestId;
                     await _supabase.from('friendships').update({ status: 'accepted' }).eq('id', reqId);
@@ -816,7 +852,6 @@
                     alert('好友申请已发送');
                     switchView('contacts');
                 };
-                // 底部菜单
                 document.querySelectorAll('.menu-item').forEach(el => {
                     el.addEventListener('click', () => {
                         const view = el.dataset.view;
@@ -826,7 +861,6 @@
                     });
                 });
             } else if (currentView === 'profile') {
-                // 设置功能
                 document.getElementById('update-name')?.addEventListener('click', async function() {
                     const newName = document.getElementById('new-name').value.trim();
                     if (!newName) return;
@@ -880,7 +914,6 @@
                 });
                 const goAdmin = document.getElementById('go-admin');
                 if (goAdmin) goAdmin.onclick = () => switchView('admin');
-                // 底部菜单
                 document.querySelectorAll('.menu-item').forEach(el => {
                     el.addEventListener('click', () => {
                         const view = el.dataset.view;
@@ -890,7 +923,7 @@
                     });
                 });
             } else if (currentView === 'admin') {
-                // 管理员事件（略简，但保留批量操作）
+                // 管理员事件（批量操作等）
                 document.getElementById('save-announcement')?.addEventListener('click', async function() {
                     const content = document.getElementById('admin-announcement').value;
                     if (!content) return;
@@ -976,10 +1009,8 @@
                     });
                 });
             } else if (currentView === 'chat') {
-                // 返回按钮
                 const backBtn = document.getElementById('chat-back-btn');
                 if (backBtn) backBtn.onclick = () => switchView('friends');
-                // 发送消息
                 const sendBtn = document.getElementById('chat-send');
                 const chatInput = document.getElementById('chat-input');
                 if (sendBtn && chatInput) {
@@ -994,7 +1025,6 @@
                         });
                         if (!error) {
                             chatInput.value = '';
-                            // 乐观更新显示消息
                             const container = document.getElementById('chat-messages');
                             if (container) {
                                 const div = document.createElement('div');
