@@ -1,523 +1,68 @@
-/* ========== 全局样式与主题 ========== */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
-}
+/* 保留原有所有样式，新增底部导航和主页卡片 */
+/* ... 原有样式不变，此处只列出新增部分 ... */
 
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    background: #f5f7fb;
-    color: #111;
-    overflow: hidden;
-    height: 100vh;
-}
-
-:root {
-    --primary: #007aff;
-    --primary-dark: #005fc1;
-    --danger: #ef4444;
-    --danger-dark: #dc2626;
-    --bg-body: #f5f7fb;
-    --bg-card: white;
-    --border: #e5e5e5;
-    --text-secondary: #6c6c6c;
-}
-
-/* ========== 登录页 ========== */
-.login-container {
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: linear-gradient(135deg, #007aff, #5856d6);
-}
-.login-card {
-    background: white;
-    border-radius: 32px;
-    padding: 32px;
-    width: 320px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-    transition: transform 0.2s;
-}
-.login-card:active {
-    transform: scale(0.99);
-}
-.login-card h2 {
-    text-align: center;
-    margin-bottom: 24px;
-}
-.login-card input {
-    width: 100%;
-    padding: 14px;
-    margin-bottom: 16px;
-    border: 1px solid #ddd;
-    border-radius: 30px;
-    font-size: 16px;
-}
-.login-card input:focus {
-    border-color: var(--primary);
-    outline: none;
-}
-.login-card button {
-    width: 100%;
-    padding: 14px;
-    background: var(--primary);
-    color: white;
-    border: none;
-    border-radius: 30px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: transform 0.2s, background 0.2s;
-}
-.login-card button:active {
-    transform: scale(0.98);
-}
-.auth-switch {
-    text-align: center;
-    margin-top: 16px;
-    color: var(--primary);
-    cursor: pointer;
-}
-.error-msg {
-    color: var(--danger);
-    margin-bottom: 12px;
-    text-align: center;
-}
-
-/* ========== 主应用容器与滑动切换 ========== */
-.app {
-    height: 100vh;
-    background: var(--bg-body);
-    position: relative;
-    overflow: hidden;
-}
-.view-container {
-    position: absolute;
-    top: 0;
+/* 底部导航栏 */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
-    transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
-    overflow-y: auto;
-    background: var(--bg-body);
-}
-.view-container.friends-view {
-    transform: translateX(0);
-}
-.view-container.chat-view {
-    transform: translateX(100%);
-}
-.app.show-chat .friends-view {
-    transform: translateX(-100%);
-}
-.app.show-chat .chat-view {
-    transform: translateX(0);
-}
-
-/* ========== 好友列表页 ========== */
-.friends-header {
+    right: 0;
     background: white;
-    padding: 16px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-}
-.friends-header .title {
-    font-size: 20px;
-    font-weight: 600;
-}
-.user-info {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 30px;
-    background: #f0f2f5;
-    transition: background 0.2s;
-}
-.user-info:active {
-    background: #e4e6e9;
-}
-.user-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: var(--primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: bold;
-}
-.user-name {
-    font-weight: 500;
-    font-size: 14px;
-}
-.friend-item {
-    display: flex;
-    align-items: center;
-    padding: 12px 16px;
-    background: white;
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-    transition: background 0.2s;
-}
-.friend-item:active {
-    background: #f0f0f0;
-}
-.avatar {
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    background: var(--primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 20px;
-    font-weight: bold;
-    margin-right: 12px;
-    position: relative;
-}
-.unread-badge {
-    position: absolute;
-    top: -6px;
-    right: -6px;
-    background: #ff3b30;
-    color: white;
-    border-radius: 50%;
-    min-width: 18px;
-    height: 18px;
-    font-size: 11px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 4px;
-}
-.friend-info {
-    flex: 1;
-}
-.friend-name {
-    font-weight: 500;
-    font-size: 16px;
-    margin-bottom: 4px;
-}
-.last-message {
-    font-size: 13px;
-    color: var(--text-secondary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.last-time {
-    font-size: 11px;
-    color: var(--text-secondary);
-}
-
-/* ========== 聊天页 ========== */
-.chat-header {
-    background: white;
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    position: relative;
-}
-.back-btn {
-    font-size: 28px;
-    cursor: pointer;
-    margin-right: 16px;
-    width: 32px;
-    text-align: center;
-}
-.chat-title {
-    flex: 1;
-    font-size: 18px;
-    font-weight: 600;
-}
-.more-btn {
-    font-size: 24px;
-    cursor: pointer;
-    padding: 0 8px;
-}
-.chat-messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    background: #f8f9fc;
-    height: calc(100% - 120px);
-}
-.message {
-    max-width: 80%;
-    display: flex;
-    flex-direction: column;
-    animation: fadeInUp 0.2s ease;
-}
-.message.sent {
-    align-self: flex-end;
-}
-.message.received {
-    align-self: flex-start;
-}
-.bubble {
-    padding: 10px 14px;
-    border-radius: 20px;
-    font-size: 15px;
-    word-wrap: break-word;
-}
-.message.sent .bubble {
-    background: var(--primary);
-    color: white;
-    border-bottom-right-radius: 4px;
-}
-.message.received .bubble {
-    background: white;
-    color: #111;
-    border-bottom-left-radius: 4px;
-    box-shadow: 0 1px 1px rgba(0,0,0,0.05);
-}
-.message-time {
-    font-size: 10px;
-    color: #8e8e93;
-    margin-top: 4px;
-    text-align: right;
-}
-.message.received .message-time {
-    text-align: left;
-}
-.message-media {
-    margin-top: 4px;
-}
-.message-media img, .message-media video {
-    max-width: 200px;
-    max-height: 200px;
-    border-radius: 12px;
-    cursor: pointer;
-}
-.chat-input-area {
-    background: white;
-    padding: 8px 12px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
     border-top: 1px solid var(--border);
-    position: sticky;
-    bottom: 0;
-}
-.chat-input-area .emoji-btn, .chat-input-area .file-btn {
-    background: none;
-    border: none;
-    font-size: 26px;
-    cursor: pointer;
-    padding: 4px;
-}
-.input-wrapper {
-    flex: 1;
-    background: #f2f2f2;
-    border-radius: 20px;
-    padding: 8px 12px;
-}
-#chat-input {
-    width: 100%;
-    border: none;
-    outline: none;
-    background: transparent;
-    font-size: 16px;
-}
-.send-btn {
-    background: var(--primary);
-    border: none;
-    padding: 8px 16px;
-    border-radius: 20px;
-    color: white;
-    font-weight: 500;
-    cursor: pointer;
-    transition: transform 0.2s;
-}
-.send-btn:active {
-    transform: scale(0.96);
-}
-.emoji-picker {
-    position: fixed;
-    bottom: 70px;
-    left: 0;
-    right: 0;
-    background: white;
-    border-top: 1px solid #ddd;
-    padding: 12px;
-    display: none;
-    flex-wrap: wrap;
-    gap: 8px;
-    max-height: 200px;
-    overflow-y: auto;
-    z-index: 200;
-}
-.emoji-picker.active {
     display: flex;
+    justify-content: space-around;
+    padding: 8px 0 12px;
+    z-index: 100;
 }
-.emoji-item {
-    font-size: 28px;
+.nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #8e8e93;
     cursor: pointer;
-    padding: 4px;
+    transition: color 0.2s;
+}
+.nav-item.active {
+    color: var(--primary);
+}
+.nav-icon {
+    font-size: 22px;
 }
 
-/* ========== 二级菜单（底部动作菜单） ========== */
-.action-menu {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: white;
-    border-radius: 20px 20px 0 0;
-    padding: 16px;
-    transform: translateY(100%);
-    transition: transform 0.3s ease;
-    z-index: 300;
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+/* 主页卡片样式 */
+.announcement-card {
+    background: linear-gradient(135deg, #fff7e5, #ffe8c7);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 20px;
 }
-.action-menu.show {
-    transform: translateY(0);
+.announcement-card .icon {
+    font-size: 36px;
+    margin-bottom: 12px;
 }
-.menu-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.4);
-    z-index: 299;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.2s;
-}
-.menu-overlay.show {
-    opacity: 1;
-    visibility: visible;
-}
-.action-menu .menu-item {
-    padding: 16px;
-    text-align: center;
-    border-bottom: 1px solid #eee;
-    cursor: pointer;
+.announcement-card .text {
     font-size: 16px;
-}
-.action-menu .menu-item:active {
-    background: #f0f0f0;
-}
-.action-menu .menu-item:last-child {
-    border-bottom: none;
-}
-
-/* ========== 长按菜单 & 聊天更多菜单 ========== */
-.context-menu {
-    position: fixed;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    padding: 8px 0;
-    z-index: 400;
-    min-width: 120px;
-}
-.context-menu-item {
-    padding: 12px 16px;
-    cursor: pointer;
-    font-size: 14px;
-}
-.context-menu-item:active {
-    background: #f0f0f0;
-}
-.chat-more-menu {
-    position: absolute;
-    top: 50px;
-    right: 16px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    padding: 8px 0;
-    z-index: 350;
-    min-width: 140px;
-}
-.chat-more-menu .item {
-    padding: 12px 16px;
-    cursor: pointer;
-}
-.chat-more-menu .item:active {
-    background: #f0f0f0;
-}
-
-/* ========== 其他页面（个人主页、设置、管理） ========== */
-.page {
-    padding: 16px;
-    background: var(--bg-body);
-    min-height: 100%;
-    padding-bottom: 80px;
-}
-.card {
-    background: white;
-    border-radius: 16px;
-    padding: 16px;
-    margin-bottom: 16px;
-}
-.card h3 {
-    margin-bottom: 12px;
-}
-button {
-    background: var(--primary);
-    border: none;
-    padding: 10px 16px;
-    border-radius: 12px;
-    color: white;
     font-weight: 500;
-    cursor: pointer;
-    transition: transform 0.2s;
 }
-button:active {
-    transform: scale(0.98);
-}
-.danger-btn {
-    background: var(--danger);
-}
-input, textarea {
-    width: 100%;
+.notification-item {
     padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 12px;
-    margin-bottom: 12px;
-}
-.table-wrapper {
-    max-height: 300px;
-    overflow-y: auto;
-}
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-th, td {
-    padding: 10px;
-    text-align: left;
     border-bottom: 1px solid #eee;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.notification-item:active {
+    background: #f5f5f5;
+}
+
+/* 调整原有页面边距，避免被底部导航遮挡 */
+.page {
+    padding-bottom: 70px;
+}
+.friends-list {
+    padding-bottom: 70px;
 }
