@@ -541,11 +541,14 @@
                 font-size: 28px;
                 font-weight: bold;
             }
+            /* 修复表格横向滚动 */
             .table-wrapper {
-                max-height: 300px;
-                overflow-y: auto;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                margin-top: 12px;
             }
             table {
+                min-width: 600px;
                 width: 100%;
                 border-collapse: collapse;
             }
@@ -553,6 +556,7 @@
                 padding: 10px;
                 text-align: left;
                 border-bottom: 0.5px solid #dbdbdb;
+                white-space: nowrap;
             }
         }
 
@@ -863,10 +867,10 @@
             let tableRows = '';
             for (const u of users) {
                 const isSelf = (u.id === currentUser.id);
-                tableRows += `<td><td class="checkbox-col"><input type="checkbox" class="user-checkbox" value="${u.id}"><\/td><td>${escapeHtml(u.display_name)}<\/td><td>${u.is_admin ? '是' : '<button class="set-admin" data-id="'+u.id+'">设为管理员</button>'}<\/td><td>${u.is_muted ? '已禁言' : '<button class="toggle-mute" data-id="'+u.id+'">禁言</button>'}<\/td><td>${isSelf ? '自己' : '<button class="admin-del" data-id="'+u.id+'">删除</button>'}<\/td><\/tr>`;
+                tableRows += `<tr><td class="checkbox-col"><input type="checkbox" class="user-checkbox" value="${u.id}"><\/td><td>${escapeHtml(u.display_name)}<\/td><td>${u.is_admin ? '是' : '<button class="set-admin" data-id="'+u.id+'">设为管理员</button>'}<\/td><td>${u.is_muted ? '已禁言' : '<button class="toggle-mute" data-id="'+u.id+'">禁言</button>'}<\/td><td>${isSelf ? '自己' : '<button class="admin-del" data-id="'+u.id+'">删除</button>'}<\/td><\/tr>`;
             }
             return '<div style="background:white;border-radius:16px;padding:20px;margin:16px"><h3>编辑公告</h3><textarea id="admin-announcement" rows="2">' + escapeHtml(currentAnn) + '</textarea><button id="save-announcement">保存公告</button></div>' +
-                '<div style="background:white;border-radius:16px;padding:20px;margin:16px"><h3>用户管理</h3><div><button id="batch-set-admin">设为管理员</button> <button id="batch-remove-admin">取消管理员</button> <button id="batch-mute">禁言</button> <button id="batch-unmute">解除禁言</button> <button id="batch-delete" class="danger-btn">删除</button> <label><input type="checkbox" id="select-all"> 全选</label></div><div class="table-wrapper"><table><thead><tr><th class="checkbox-col"></th><th>用户名</th><th>管理员</th><th>禁言</th><th>操作</th></tr></thead><tbody>' + tableRows + '</tbody></table></div></div>' +
+                '<div style="background:white;border-radius:16px;padding:20px;margin:16px"><h3>用户管理</h3><div><button id="batch-set-admin">设为管理员</button> <button id="batch-remove-admin">取消管理员</button> <button id="batch-mute">禁言</button> <button id="batch-unmute">解除禁言</button> <button id="batch-delete" class="danger-btn">删除</button> <label><input type="checkbox" id="select-all"> 全选</label></div><div class="table-wrapper"><td><table><thead><tr><th class="checkbox-col"></th><th>用户名</th><th>管理员</th><th>禁言</th><th>操作</th></tr></thead><tbody>' + tableRows + '</tbody></table></div></div>' +
                 '<div style="background:white;border-radius:16px;padding:20px;margin:16px"><h3>创建新用户</h3><input id="new-admin-name" placeholder="用户名"><input id="new-admin-pwd" placeholder="密码"><button id="admin-create-user">创建</button></div>';
         }
         function renderPCChat() {
@@ -1297,9 +1301,9 @@
                 const isSelf = (u.id === currentUser.id);
                 tableRows += `<tr><td class="checkbox-col"><input type="checkbox" class="user-checkbox" value="${u.id}"><\/td><td>${escapeHtml(u.display_name)}<\/td><td>${u.is_admin ? '是' : '<button class="set-admin" data-id="'+u.id+'">设为管理员</button>'}<\/td><td>${u.is_muted ? '已禁言' : '<button class="toggle-mute" data-id="'+u.id+'">禁言</button>'}<\/td><td>${isSelf ? '自己' : '<button class="admin-del" data-id="'+u.id+'">删除</button>'}<\/td><\/tr>`;
             }
-            const html = `<div class="page"><div class="mobile-card"><h3>编辑公告</h3><textarea id="admin-announcement" rows="2">${escapeHtml(currentAnn)}</textarea><button id="save-announcement">保存公告</button></div><div class="mobile-card"><h3>用户管理</h3><div><button id="batch-set-admin">设为管理员</button> <button id="batch-remove-admin">取消管理员</button> <button id="batch-mute">禁言</button> <button id="batch-unmute">解除禁言</button> <button id="batch-delete" class="danger-btn">删除</button> <label><input type="checkbox" id="select-all"> 全选</label></div><div class="table-wrapper"><table><thead><tr><th></th><th>用户名</th><th>管理员</th><th>禁言</th><th>操作</th></tr></thead><tbody>${tableRows}</tbody></td></div></div><div class="mobile-card"><h3>创建新用户</h3><input id="new-admin-name" placeholder="用户名"><input id="new-admin-pwd" placeholder="密码"><button id="admin-create-user">创建</button></div><button onclick="location.reload()">返回</button></div>`;
+            const html = `<div class="page"><div class="mobile-card"><h3>编辑公告</h3><textarea id="admin-announcement" rows="2">${escapeHtml(currentAnn)}</textarea><button id="save-announcement">保存公告</button></div><div class="mobile-card"><h3>用户管理</h3><div><button id="batch-set-admin">设为管理员</button> <button id="batch-remove-admin">取消管理员</button> <button id="batch-mute">禁言</button> <button id="batch-unmute">解除禁言</button> <button id="batch-delete" class="danger-btn">删除</button> <label><input type="checkbox" id="select-all"> 全选</label></div><div class="table-wrapper"><table><thead><tr><th></th><th>用户名</th><th>管理员</th><th>禁言</th><th>操作</th></tr></thead><tbody>${tableRows}</tbody></table></div></div><div class="mobile-card"><h3>创建新用户</h3><input id="new-admin-name" placeholder="用户名"><input id="new-admin-pwd" placeholder="密码"><button id="admin-create-user">创建</button></div><button onclick="location.reload()">返回</button></div>`;
             document.getElementById('root').innerHTML = html;
-            // 绑定管理员事件（简化但完整）
+            // 绑定管理员事件
             document.getElementById('save-announcement')?.addEventListener('click', async () => {
                 const content = document.getElementById('admin-announcement').value;
                 if (!content) return;
