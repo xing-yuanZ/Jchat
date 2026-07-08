@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>轻聊</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 body{font-family:-apple-system,sans-serif;background:#0f0f13;color:#e8e8f0;min-height:100vh;}
@@ -314,6 +314,10 @@ openChat(target.email, target.username);
 }
 
 window.onload = function() {
+if (typeof supabase === ‘undefined’) {
+g(‘auth-error’).textContent = ‘网络加载失败，请刷新重试’;
+return;
+}
 g(‘tab-login’).addEventListener(‘click’, function() { switchTab(‘login’); });
 g(‘tab-register’).addEventListener(‘click’, function() { switchTab(‘register’); });
 g(‘auth-btn’).addEventListener(‘click’, doAuth);
