@@ -3,337 +3,290 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>轻聊</title>
-<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+*{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:-apple-system,sans-serif;background:#0f0f13;color:#e8e8f0;min-height:100vh;}
-#auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
-.auth-box{background:#1a1a24;border:1px solid #2e2e40;border-radius:20px;padding:28px 20px;width:100%;max-width:360px;}
-.auth-logo{text-align:center;margin-bottom:20px;}
-.icon{width:60px;height:60px;background:linear-gradient(135deg,#07c160,#0099ff);border-radius:16px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:10px;}
-.auth-logo h1{font-size:22px;font-weight:700;}
-.auth-logo p{color:#7a7a9a;font-size:13px;margin-top:4px;}
-.auth-tabs{display:flex;background:#22222f;border-radius:10px;padding:4px;gap:4px;margin-bottom:14px;}
-.auth-tab{flex:1;padding:10px;border:none;background:none;color:#7a7a9a;border-radius:7px;cursor:pointer;font-size:15px;font-weight:500;-webkit-appearance:none;touch-action:manipulation;}
-.auth-tab.active{background:#07c160;color:#fff;}
-.auth-input{width:100%;background:#22222f;border:1px solid #2e2e40;border-radius:10px;padding:14px;color:#e8e8f0;font-size:16px;outline:none;-webkit-appearance:none;display:block;margin-bottom:12px;}
-.auth-input::placeholder{color:#7a7a9a;}
-.auth-error{color:#ff6b6b;font-size:13px;text-align:center;min-height:18px;margin-bottom:8px;}
-.auth-btn{width:100%;background:#07c160;color:#fff;border:none;border-radius:10px;padding:15px;font-size:16px;font-weight:700;cursor:pointer;-webkit-appearance:none;touch-action:manipulation;display:block;}
+#auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.box{background:#1a1a24;border:1px solid #2e2e40;border-radius:20px;padding:28px 20px;width:100%;max-width:360px;}
+.logo{text-align:center;margin-bottom:20px;}
+.logo .ic{width:60px;height:60px;background:linear-gradient(135deg,#07c160,#0099ff);border-radius:16px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:10px;}
+.logo h1{font-size:22px;font-weight:700;}
+.logo p{color:#7a7a9a;font-size:13px;margin-top:4px;}
+.tabs{display:flex;background:#22222f;border-radius:10px;padding:4px;gap:4px;margin-bottom:14px;}
+.tab{flex:1;padding:10px;border:none;background:none;color:#7a7a9a;border-radius:7px;cursor:pointer;font-size:15px;font-weight:500;}
+.tab.on{background:#07c160;color:#fff;}
+input{width:100%;background:#22222f;border:1px solid #2e2e40;border-radius:10px;padding:14px;color:#e8e8f0;font-size:16px;outline:none;display:block;margin-bottom:12px;}
+input::placeholder{color:#7a7a9a;}
+.err{color:#ff6b6b;font-size:13px;text-align:center;min-height:18px;margin-bottom:8px;}
+.btn{width:100%;background:#07c160;color:#fff;border:none;border-radius:10px;padding:15px;font-size:16px;font-weight:700;cursor:pointer;display:block;}
 #app{display:none;height:100vh;flex-direction:row;}
-.sidebar{width:260px;background:#1a1a24;border-right:1px solid #2e2e40;display:flex;flex-direction:column;flex-shrink:0;height:100vh;}
-.sidebar-header{padding:16px;border-bottom:1px solid #2e2e40;display:flex;align-items:center;gap:10px;}
-.my-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#07c160,#0099ff);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0;}
-.my-name{font-size:14px;font-weight:500;flex:1;}
-.logout-btn{background:none;border:none;color:#7a7a9a;cursor:pointer;font-size:20px;padding:4px;touch-action:manipulation;}
-.new-chat-btn{margin:8px 12px;background:#22222f;border:1px dashed #2e2e40;border-radius:10px;padding:10px;color:#7a7a9a;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:8px;-webkit-appearance:none;touch-action:manipulation;}
-.conversations{flex:1;overflow-y:auto;padding:4px 0;}
-.conv-item{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-radius:10px;margin:2px 6px;touch-action:manipulation;}
-.conv-item:active,.conv-item.active{background:#22222f;}
-.conv-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#5b5bf8,#9b59b6);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:#fff;flex-shrink:0;}
-.conv-info{flex:1;overflow:hidden;}
-.conv-name{font-size:14px;font-weight:500;}
-.conv-last{font-size:12px;color:#7a7a9a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px;}
-.chat-area{flex:1;display:flex;flex-direction:column;background:#0f0f13;min-width:0;height:100vh;}
-.chat-header{padding:14px 18px;border-bottom:1px solid #2e2e40;display:flex;align-items:center;gap:12px;background:#1a1a24;}
-.chat-header-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#5b5bf8,#9b59b6);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;}
-.chat-header-info h2{font-size:15px;font-weight:600;}
-.chat-header-info p{font-size:12px;color:#07c160;margin-top:2px;}
-.messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;}
-.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#7a7a9a;gap:12px;}
-.empty-state .big-icon{font-size:56px;opacity:0.3;}
-.msg-row{display:flex;align-items:flex-end;gap:8px;}
-.msg-row.me{flex-direction:row-reverse;}
-.msg-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#5b5bf8,#9b59b6);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;}
-.msg-row.me .msg-avatar{background:linear-gradient(135deg,#07c160,#0099ff);}
-.msg-content{max-width:70%;display:flex;flex-direction:column;gap:2px;}
-.msg-row.me .msg-content{align-items:flex-end;}
-.msg-sender{font-size:11px;color:#7a7a9a;padding:0 4px;margin-bottom:2px;}
-.bubble{padding:10px 14px;border-radius:16px 16px 16px 4px;font-size:14px;line-height:1.5;word-break:break-word;background:#2a2a3a;color:#e8e8f0;}
-.msg-row.me .bubble{background:#07c160;color:#fff;border-radius:16px 16px 4px 16px;}
-.msg-time{font-size:10px;color:#7a7a9a;padding:0 4px;}
-.input-area{padding:12px 14px;border-top:1px solid #2e2e40;background:#1a1a24;display:flex;gap:10px;align-items:flex-end;}
-.msg-input{flex:1;background:#22222f;border:1px solid #2e2e40;border-radius:12px;padding:11px 14px;color:#e8e8f0;font-size:16px;outline:none;resize:none;max-height:100px;line-height:1.5;-webkit-appearance:none;}
-.send-btn{width:44px;height:44px;background:#07c160;border:none;border-radius:50%;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;touch-action:manipulation;}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px;}
-.modal{background:#1a1a24;border:1px solid #2e2e40;border-radius:16px;padding:24px;width:100%;max-width:340px;}
-.modal h3{font-size:17px;font-weight:600;margin-bottom:8px;}
-.modal p{color:#7a7a9a;font-size:13px;margin-bottom:14px;}
-.modal-input{width:100%;background:#22222f;border:1px solid #2e2e40;border-radius:10px;padding:12px 14px;color:#e8e8f0;font-size:16px;outline:none;-webkit-appearance:none;margin-bottom:10px;}
-.modal-input::placeholder{color:#7a7a9a;}
-.modal-actions{display:flex;gap:10px;margin-top:4px;}
-.modal-cancel{flex:1;padding:11px;background:#22222f;border:1px solid #2e2e40;border-radius:10px;color:#7a7a9a;cursor:pointer;font-size:14px;-webkit-appearance:none;touch-action:manipulation;}
-.modal-confirm{flex:1;padding:11px;background:#07c160;border:none;border-radius:10px;color:#fff;cursor:pointer;font-size:14px;font-weight:600;-webkit-appearance:none;touch-action:manipulation;}
-.modal-err{color:#ff6b6b;font-size:13px;min-height:16px;margin-bottom:8px;}
+.side{width:260px;background:#1a1a24;border-right:1px solid #2e2e40;display:flex;flex-direction:column;height:100vh;}
+.side-top{padding:16px;border-bottom:1px solid #2e2e40;display:flex;align-items:center;gap:10px;}
+.av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#07c160,#0099ff);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0;}
+.nm{font-size:14px;font-weight:500;flex:1;}
+.out{background:none;border:none;color:#7a7a9a;cursor:pointer;font-size:20px;padding:4px;}
+.nc{margin:8px 12px;background:#22222f;border:1px dashed #2e2e40;border-radius:10px;padding:10px;color:#7a7a9a;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:8px;}
+.cvs{flex:1;overflow-y:auto;padding:4px 0;}
+.ci{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-radius:10px;margin:2px 6px;}
+.ci:active,.ci.on{background:#22222f;}
+.ca{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#5b5bf8,#9b59b6);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:#fff;flex-shrink:0;}
+.cn{font-size:14px;font-weight:500;}
+.chat{flex:1;display:flex;flex-direction:column;background:#0f0f13;height:100vh;}
+.ch{padding:14px 18px;border-bottom:1px solid #2e2e40;display:flex;align-items:center;gap:12px;background:#1a1a24;}
+.cha{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#5b5bf8,#9b59b6);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;}
+.ch h2{font-size:15px;font-weight:600;}
+.msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;}
+.es{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#7a7a9a;gap:12px;}
+.es .bi{font-size:56px;opacity:0.3;}
+.mr{display:flex;align-items:flex-end;gap:8px;}
+.mr.me{flex-direction:row-reverse;}
+.ma{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#5b5bf8,#9b59b6);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;}
+.mr.me .ma{background:linear-gradient(135deg,#07c160,#0099ff);}
+.mc{max-width:70%;display:flex;flex-direction:column;gap:2px;}
+.mr.me .mc{align-items:flex-end;}
+.ms{font-size:11px;color:#7a7a9a;padding:0 4px;margin-bottom:2px;}
+.bub{padding:10px 14px;border-radius:16px 16px 16px 4px;font-size:14px;line-height:1.5;word-break:break-word;background:#2a2a3a;color:#e8e8f0;}
+.mr.me .bub{background:#07c160;color:#fff;border-radius:16px 16px 4px 16px;}
+.mt{font-size:10px;color:#7a7a9a;padding:0 4px;}
+.ia{padding:12px 14px;border-top:1px solid #2e2e40;background:#1a1a24;display:flex;gap:10px;align-items:flex-end;}
+.mi{flex:1;background:#22222f;border:1px solid #2e2e40;border-radius:12px;padding:11px 14px;color:#e8e8f0;font-size:16px;outline:none;resize:none;max-height:100px;line-height:1.5;}
+.sb{width:44px;height:44px;background:#07c160;border:none;border-radius:50%;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.mo{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px;}
+.md{background:#1a1a24;border:1px solid #2e2e40;border-radius:16px;padding:24px;width:100%;max-width:340px;}
+.md h3{font-size:17px;font-weight:600;margin-bottom:8px;}
+.md p{color:#7a7a9a;font-size:13px;margin-bottom:14px;}
+.me2{color:#ff6b6b;font-size:13px;min-height:16px;margin-bottom:8px;}
+.mas{display:flex;gap:10px;}
+.mc2{flex:1;padding:11px;background:#22222f;border:1px solid #2e2e40;border-radius:10px;color:#7a7a9a;cursor:pointer;font-size:14px;}
+.mok{flex:1;padding:11px;background:#07c160;border:none;border-radius:10px;color:#fff;cursor:pointer;font-size:14px;font-weight:600;}
 </style>
 </head>
 <body>
 
-<div id="auth-screen">
-  <div class="auth-box">
-    <div class="auth-logo">
-      <div class="icon">💬</div>
+<div id="auth">
+  <div class="box">
+    <div class="logo">
+      <div class="ic">💬</div>
       <h1>轻聊</h1>
       <p>简单、快速的即时通讯</p>
     </div>
-    <div class="auth-tabs">
-      <button type="button" class="auth-tab active" id="tab-login">登录</button>
-      <button type="button" class="auth-tab" id="tab-register">注册</button>
+    <div class="tabs">
+      <button type="button" class="tab on" id="tl">登录</button>
+      <button type="button" class="tab" id="tr">注册</button>
     </div>
-    <input class="auth-input" id="auth-email" type="email" placeholder="邮箱地址">
-    <input class="auth-input" id="auth-password" type="password" placeholder="密码（至少6位）">
-    <input class="auth-input" id="auth-username" type="text" placeholder="用户名（昵称）" style="display:none">
-    <div class="auth-error" id="auth-error"></div>
-    <button type="button" class="auth-btn" id="auth-btn">登录</button>
+    <input id="em" type="email" placeholder="邮箱地址">
+    <input id="pw" type="password" placeholder="密码（至少6位）">
+    <input id="un" type="text" placeholder="用户名（昵称）" style="display:none">
+    <div class="err" id="er"></div>
+    <button type="button" class="btn" id="ab">登录</button>
   </div>
 </div>
 
 <div id="app">
-  <div class="sidebar">
-    <div class="sidebar-header">
-      <div class="my-avatar" id="my-avatar">?</div>
-      <span class="my-name" id="my-name">加载中...</span>
-      <button type="button" class="logout-btn" id="logout-btn">⏻</button>
+  <div class="side">
+    <div class="side-top">
+      <div class="av" id="mav">?</div>
+      <span class="nm" id="mnm">...</span>
+      <button type="button" class="out" id="ob">⏻</button>
     </div>
-    <button type="button" class="new-chat-btn" id="new-chat-btn">✉️ 发起新聊天</button>
-    <div class="conversations" id="conversations">
-      <div style="padding:20px;text-align:center;color:#7a7a9a;font-size:13px">暂无聊天</div>
-    </div>
+    <button type="button" class="nc" id="nb">✉️ 发起新聊天</button>
+    <div class="cvs" id="cvs"><div style="padding:20px;text-align:center;color:#7a7a9a;font-size:13px">暂无聊天</div></div>
   </div>
-  <div class="chat-area" id="chat-area">
-    <div class="empty-state">
-      <div class="big-icon">💬</div>
-      <p>选择聊天或发起新对话</p>
-    </div>
+  <div class="chat" id="chat">
+    <div class="es"><div class="bi">💬</div><p>选择聊天或发起新对话</p></div>
   </div>
 </div>
 
-<div class="modal-overlay" id="new-chat-modal" style="display:none">
-  <div class="modal">
+<div class="mo" id="mo" style="display:none">
+  <div class="md">
     <h3>发起新聊天</h3>
     <p>输入对方的邮箱地址</p>
-    <input class="modal-input" id="target-email" type="email" placeholder="对方邮箱">
-    <div class="modal-err" id="modal-err"></div>
-    <div class="modal-actions">
-      <button type="button" class="modal-cancel" id="modal-cancel">取消</button>
-      <button type="button" class="modal-confirm" id="modal-confirm">开始聊天</button>
+    <input id="te" type="email" placeholder="对方邮箱" style="margin-bottom:10px">
+    <div class="me2" id="me"></div>
+    <div class="mas">
+      <button type="button" class="mc2" id="mcc">取消</button>
+      <button type="button" class="mok" id="mok">开始聊天</button>
     </div>
   </div>
 </div>
 
 <script>
-var SURL = 'https://cirmmvmpgeafsszbghbd.supabase.co';
-var SKEY = 'sb_publishable_vVYai2-TEO93beHixafTfw_Y3lygQg1';
-var sb = supabase.createClient(SURL, SKEY);
-
-var me = null;
-var chatWith = null;
-var chatName = null;
-var timer = null;
-var currentTab = 'login';
+var URL = 'https://cirmmvmpgeafsszbghbd.supabase.co/rest/v1';
+var KEY = 'sb_publishable_vVYai2-TEO93beHixafTfw_Y3lygQg1';
+var me = null, cw = null, cn = null, tmr = null, ctab = 'login';
 
 function g(id) { return document.getElementById(id); }
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-function switchTab(t) {
-  currentTab = t;
-  g('tab-login').className = 'auth-tab' + (t === 'login' ? ' active' : '');
-  g('tab-register').className = 'auth-tab' + (t === 'register' ? ' active' : '');
-  g('auth-username').style.display = t === 'register' ? 'block' : 'none';
-  g('auth-btn').textContent = t === 'login' ? '登录' : '注册';
-  g('auth-error').textContent = '';
+function api(method, path, body) {
+  var opts = {
+    method: method,
+    headers: {
+      'apikey': KEY,
+      'Authorization': 'Bearer ' + KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  return fetch(URL + path, opts).then(function(r) { return r.json(); });
+}
+
+function setTab(t) {
+  ctab = t;
+  g('tl').className = 'tab' + (t==='login' ? ' on' : '');
+  g('tr').className = 'tab' + (t==='register' ? ' on' : '');
+  g('un').style.display = t==='register' ? 'block' : 'none';
+  g('ab').textContent = t==='login' ? '登录' : '注册';
+  g('er').textContent = '';
 }
 
 function doAuth() {
-  var email = g('auth-email').value.trim().toLowerCase();
-  var password = g('auth-password').value;
-  var username = g('auth-username').value.trim();
-  var err = g('auth-error');
-  err.textContent = '';
-  if (!email || !password) { err.textContent = '请填写邮箱和密码'; return; }
-  if (currentTab === 'register' && !username) { err.textContent = '请填写用户名'; return; }
-  g('auth-btn').textContent = '处理中...';
-  g('auth-btn').disabled = true;
+  var email = g('em').value.trim().toLowerCase();
+  var pw = g('pw').value;
+  var un = g('un').value.trim();
+  var er = g('er');
+  er.textContent = '';
+  if (!email || !pw) { er.textContent = '请填写邮箱和密码'; return; }
+  if (ctab==='register' && !un) { er.textContent = '请填写用户名'; return; }
+  g('ab').textContent = '处理中...';
+  g('ab').disabled = true;
 
-  if (currentTab === 'register') {
-    sb.from('users').select('email').eq('email', email).then(function(res) {
-      if (res.data && res.data.length > 0) {
-        err.textContent = '该邮箱已被注册';
-        g('auth-btn').textContent = '注册';
-        g('auth-btn').disabled = false;
-        return;
+  if (ctab === 'register') {
+    api('GET', '/users?email=eq.' + encodeURIComponent(email) + '&select=email').then(function(data) {
+      if (data && data.length > 0) {
+        g('er').textContent = '该邮箱已被注册';
+        g('ab').textContent = '注册'; g('ab').disabled = false; return;
       }
-      sb.from('users').insert({email: email, username: username, password_hash: btoa(password)}).then(function(res2) {
-        if (res2.error) {
-          err.textContent = '注册失败：' + res2.error.message;
-          g('auth-btn').textContent = '注册';
-          g('auth-btn').disabled = false;
-          return;
+      api('POST', '/users', {email: email, username: un, password_hash: btoa(pw)}).then(function(data) {
+        if (data && data.length > 0) {
+          me = data[0]; showApp();
+        } else {
+          g('er').textContent = '注册失败，请重试';
+          g('ab').textContent = '注册'; g('ab').disabled = false;
         }
-        me = {email: email, username: username};
-        showApp();
       });
     });
   } else {
-    sb.from('users').select('*').eq('email', email).then(function(res) {
-      if (!res.data || res.data.length === 0) {
-        err.textContent = '用户不存在';
-        g('auth-btn').textContent = '登录';
-        g('auth-btn').disabled = false;
-        return;
+    api('GET', '/users?email=eq.' + encodeURIComponent(email) + '&select=*').then(function(data) {
+      if (!data || data.length === 0) {
+        g('er').textContent = '用户不存在'; g('ab').textContent = '登录'; g('ab').disabled = false; return;
       }
-      if (res.data[0].password_hash !== btoa(password)) {
-        err.textContent = '密码错误';
-        g('auth-btn').textContent = '登录';
-        g('auth-btn').disabled = false;
-        return;
+      if (data[0].password_hash !== btoa(pw)) {
+        g('er').textContent = '密码错误'; g('ab').textContent = '登录'; g('ab').disabled = false; return;
       }
-      me = res.data[0];
-      showApp();
+      me = data[0]; showApp();
+    }).catch(function() {
+      g('er').textContent = '网络错误，请重试'; g('ab').textContent = '登录'; g('ab').disabled = false;
     });
   }
 }
 
 function showApp() {
-  g('auth-screen').style.display = 'none';
+  g('auth').style.display = 'none';
   g('app').style.display = 'flex';
-  g('my-name').textContent = me.username;
-  g('my-avatar').textContent = me.username[0].toUpperCase();
-  loadConvs();
+  g('mnm').textContent = me.username;
+  g('mav').textContent = me.username[0].toUpperCase();
+  loadCvs();
 }
 
-function loadConvs() {
-  sb.from('messages').select('receiver_email').eq('sender_email', me.email).then(function(r1) {
-    sb.from('messages').select('sender_email').eq('receiver_email', me.email).then(function(r2) {
-      var peers = {};
-      (r1.data || []).forEach(function(m) { peers[m.receiver_email] = 1; });
-      (r2.data || []).forEach(function(m) { peers[m.sender_email] = 1; });
-      var list = Object.keys(peers);
-      var el = g('conversations');
-      if (list.length === 0) {
-        el.innerHTML = '<div style="padding:20px;text-align:center;color:#7a7a9a;font-size:13px">暂无聊天，点击上方开始</div>';
-        return;
-      }
-      sb.from('users').select('email,username').then(function(ur) {
-        var names = {};
-        (ur.data || []).forEach(function(u) { names[u.email] = u.username; });
-        el.innerHTML = list.map(function(email) {
-          var name = names[email] || email;
-          var active = chatWith === email ? ' active' : '';
-          return '<div class="conv-item' + active + '" onclick="openChat(\'' + email + '\',\'' + esc(name) + '\')">' +
-            '<div class="conv-avatar">' + name[0].toUpperCase() + '</div>' +
-            '<div class="conv-info"><div class="conv-name">' + esc(name) + '</div></div></div>';
-        }).join('');
-      });
+function loadCvs() {
+  api('GET', '/messages?or=(sender_email.eq.' + me.email + ',receiver_email.eq.' + me.email + ')&select=sender_email,receiver_email').then(function(data) {
+    var peers = {};
+    (data || []).forEach(function(m) {
+      if (m.sender_email !== me.email) peers[m.sender_email] = 1;
+      if (m.receiver_email !== me.email) peers[m.receiver_email] = 1;
+    });
+    var list = Object.keys(peers);
+    var el = g('cvs');
+    if (!list.length) { el.innerHTML = '<div style="padding:20px;text-align:center;color:#7a7a9a;font-size:13px">暂无聊天，点击上方开始</div>'; return; }
+    api('GET', '/users?email=in.(' + list.map(encodeURIComponent).join(',') + ')&select=email,username').then(function(users) {
+      var nm = {};
+      (users || []).forEach(function(u) { nm[u.email] = u.username; });
+      el.innerHTML = list.map(function(e) {
+        var n = nm[e] || e, act = cw===e ? ' on' : '';
+        return '<div class="ci' + act + '" onclick="openChat(\'' + e + '\',\'' + esc(n) + '\')">' +
+          '<div class="ca">' + n[0].toUpperCase() + '</div>' +
+          '<div class="cn">' + esc(n) + '</div></div>';
+      }).join('');
     });
   });
 }
 
 function openChat(email, name) {
-  chatWith = email;
-  chatName = name;
-  g('chat-area').innerHTML =
-    '<div class="chat-header"><div class="chat-header-avatar">' + name[0].toUpperCase() + '</div>' +
-    '<div class="chat-header-info"><h2>' + esc(name) + '</h2><p>在线</p></div></div>' +
-    '<div class="messages" id="messages"></div>' +
-    '<div class="input-area"><textarea class="msg-input" id="msg-input" placeholder="输入消息..." rows="1"></textarea>' +
+  cw = email; cn = name;
+  g('chat').innerHTML =
+    '<div class="ch"><div class="cha">' + name[0].toUpperCase() + '</div><div><h2>' + esc(name) + '</h2></div></div>' +
+    '<div class="msgs" id="msgs"></div>' +
+    '<div class="ia"><textarea class="mi" id="mi" placeholder="输入消息..." rows="1"></textarea>' +
 
 ```
-'<button type="button" class="send-btn" onclick="sendMsg()">➤</button></div>';
+'<button type="button" class="sb" id="snd">➤</button></div>';
 ```
 
-g(‘msg-input’).addEventListener(‘keydown’, function(e) {
-if (e.key === ‘Enter’ && !e.shiftKey) { e.preventDefault(); sendMsg(); }
-});
-loadConvs();
+g(‘snd’).addEventListener(‘click’, sendMsg);
+g(‘mi’).addEventListener(‘keydown’, function(e) { if (e.key===‘Enter’&&!e.shiftKey){e.preventDefault();sendMsg();} });
+loadCvs();
 loadMsgs();
-if (timer) clearInterval(timer);
-timer = setInterval(loadMsgs, 3000);
+if (tmr) clearInterval(tmr);
+tmr = setInterval(loadMsgs, 3000);
 }
 
 function loadMsgs() {
-if (!chatWith) return;
-sb.from(‘messages’).select(’*’)
-.or(‘and(sender_email.eq.’ + me.email + ‘,receiver_email.eq.’ + chatWith + ‘),and(sender_email.eq.’ + chatWith + ‘,receiver_email.eq.’ + me.email + ‘)’)
-.order(‘created_at’, {ascending: true})
-.then(function(res) {
-var el = g(‘messages’);
+if (!cw) return;
+var q = ‘/messages?or=(and(sender_email.eq.’ + me.email + ‘,receiver_email.eq.’ + cw + ‘),and(sender_email.eq.’ + cw + ‘,receiver_email.eq.’ + me.email + ‘))&order=created_at.asc&select=*’;
+api(‘GET’, q).then(function(msgs) {
+var el = g(‘msgs’);
 if (!el) return;
-var msgs = res.data || [];
-el.innerHTML = msgs.map(function(m) {
+el.innerHTML = (msgs || []).map(function(m) {
 var isMe = m.sender_email === me.email;
-var name = isMe ? me.username : chatName;
-var time = new Date(m.created_at).toLocaleTimeString(‘zh’, {hour: ‘2-digit’, minute: ‘2-digit’});
-return ‘<div class="msg-row' + (isMe ? ' me' : '') + '">’ +
-‘<div class="msg-avatar">’ + name[0].toUpperCase() + ‘</div>’ +
-‘<div class="msg-content">’ +
-(!isMe ? ‘<div class="msg-sender">’ + esc(name) + ‘</div>’ : ‘’) +
-‘<div class="bubble">’ + esc(m.text) + ‘</div>’ +
-‘<div class="msg-time">’ + time + ‘</div></div></div>’;
+var n = isMe ? me.username : cn;
+var t = new Date(m.created_at).toLocaleTimeString(‘zh’, {hour:‘2-digit’,minute:‘2-digit’});
+return ‘<div class="mr' + (isMe?' me':'') + '">’ +
+‘<div class="ma">’ + n[0].toUpperCase() + ‘</div>’ +
+‘<div class="mc">’ + (!isMe?’<div class="ms">’+esc(n)+’</div>’:’’) +
+‘<div class="bub">’ + esc(m.text) + ‘</div>’ +
+‘<div class="mt">’ + t + ‘</div></div></div>’;
 }).join(’’);
 el.scrollTop = el.scrollHeight;
 });
 }
 
 function sendMsg() {
-var input = g(‘msg-input’);
-if (!input || !chatWith) return;
+var input = g(‘mi’);
+if (!input || !cw) return;
 var text = input.value.trim();
 if (!text) return;
 input.value = ‘’;
-sb.from(‘messages’).insert({sender_email: me.email, receiver_email: chatWith, text: text}).then(function() {
-loadMsgs();
-});
+api(‘POST’, ‘/messages’, {sender_email: me.email, receiver_email: cw, text: text}).then(loadMsgs);
 }
 
-function openNewChat() {
-g(‘new-chat-modal’).style.display = ‘flex’;
-g(‘modal-err’).textContent = ‘’;
-g(‘target-email’).value = ‘’;
-}
-
-function closeNewChat() {
-g(‘new-chat-modal’).style.display = ‘none’;
-}
+function openMo() { g(‘mo’).style.display=‘flex’; g(‘me’).textContent=’’; g(‘te’).value=’’; }
+function closeMo() { g(‘mo’).style.display=‘none’; }
 
 function startChat() {
-var email = g(‘target-email’).value.trim().toLowerCase();
-var err = g(‘modal-err’);
-err.textContent = ‘’;
-if (!email) { err.textContent = ‘请输入邮箱’; return; }
-if (email === me.email) { err.textContent = ‘不能和自己聊天’; return; }
-err.textContent = ‘🔍 查找用户中…’;
-sb.from(‘users’).select(’*’).eq(‘email’, email).then(function(res) {
-if (!res.data || res.data.length === 0) { err.textContent = ‘找不到该用户’; return; }
-var target = res.data[0];
-closeNewChat();
-openChat(target.email, target.username);
+var email = g(‘te’).value.trim().toLowerCase();
+var er = g(‘me’);
+if (!email) { er.textContent=‘请输入邮箱’; return; }
+if (email===me.email) { er.textContent=‘不能和自己聊天’; return; }
+er.textContent = ‘查找用户中…’;
+api(‘GET’, ‘/users?email=eq.’ + encodeURIComponent(email) + ‘&select=*’).then(function(data) {
+if (!data || !data.length) { er.textContent=‘找不到该用户’; return; }
+closeMo();
+openChat(data[0].email, data[0].username);
 });
 }
 
-window.onload = function() {
-if (typeof supabase === ‘undefined’) {
-g(‘auth-error’).textContent = ‘网络加载失败，请刷新重试’;
-return;
-}
-g(‘tab-login’).addEventListener(‘click’, function() { switchTab(‘login’); });
-g(‘tab-register’).addEventListener(‘click’, function() { switchTab(‘register’); });
-g(‘auth-btn’).addEventListener(‘click’, doAuth);
-g(‘logout-btn’).addEventListener(‘click’, function() {
-me = null; chatWith = null;
-if (timer) clearInterval(timer);
-g(‘app’).style.display = ‘none’;
-g(‘auth-screen’).style.display = ‘flex’;
-g(‘auth-btn’).textContent = ‘登录’;
-g(‘auth-btn’).disabled = false;
-});
-g(‘new-chat-btn’).addEventListener(‘click’, openNewChat);
-g(‘modal-cancel’).addEventListener(‘click’, closeNewChat);
-g(‘modal-confirm’).addEventListener(‘click’, startChat);
-g(‘new-chat-modal’).addEventListener(‘click’, function(e) { if (e.target === this) closeNewChat(); });
-};
+g(‘tl’).addEventListener(‘click’, function() { setTab(‘login’); });
+g(‘tr’).addEventListener(‘click’, function() { setTab(‘register’); });
+g(‘ab’).addEventListener(‘click’, doAuth);
+g(‘ob’).addEventListener(‘click’, function() { me=null; cw=null; if(tmr)clearInterval(tmr); g(‘app’).style.display=‘none’; g(‘auth’).style.display=‘flex’; g(‘ab’).textContent=‘登录’; g(‘ab’).disabled=false; });
+g(‘nb’).addEventListener(‘click’, openMo);
+g(‘mcc’).addEventListener(‘click’, closeMo);
+g(‘mok’).addEventListener(‘click’, startChat);
+g(‘mo’).addEventListener(‘click’, function(e) { if(e.target===this) closeMo(); });
 </script>
 
 </body>
